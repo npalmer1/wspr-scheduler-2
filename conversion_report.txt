@@ -1,0 +1,11 @@
+controls: 434
+handlers: 162
+hidden at start: 58
+
+Not converted / needs attention:
+  tabPage1: TabPage.Click -> tabPage1_Click (not wired; usually an empty designer stub - check Form1.cs)
+  tabPage3: TabPage.Click -> tabPage3_Click (not wired; usually an empty designer stub - check Form1.cs)
+  tabPage4: TabPage.Click -> tabPage4_Click (not wired; usually an empty designer stub - check Form1.cs)
+  AntgroupBox: GroupBox.Enter -> AntgroupBox_Enter (not wired; usually an empty designer stub - check Form1.cs)
+  FreqgroupBox: GroupBox.Enter -> FreqgroupBox_Enter (not wired; usually an empty designer stub - check Form1.cs)
+  RXAudiogroupBox: GroupBox.Enter -> RXAudiogroupBox_Enter (not wired; usually an empty designer stub - check Form1.cs)

@@ -1,0 +1,12 @@
+# build output
+build*/
+CMakeLists.txt.user*
+*.autosave
+# test and run-time files
+*.wav
+remote.pfx
+remote.ini
+./vs
+./out
+CMakeSettings.json
+gitpush.bat
