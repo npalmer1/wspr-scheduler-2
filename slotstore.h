@@ -1,6 +1,7 @@
 #pragma once
 // All MySQL access needed by the Slots tab.
 // Replaces the ~25 C# methods that each opened their own MySqlConnection.
+#include "dbbackoff.h"
 #include "rigctld.h"
 #include "slotrecord.h"
 
@@ -177,6 +178,7 @@ private:
     DbSettings m_settings;
     QString m_slotDb = "wspr_slots";
     QString m_connPrefix;
+    DbBackoff m_backoff;       // no new connection attempts for a while after one failed
     QStringList m_connections;
     std::optional<bool> m_hasSwitch2;
     QString m_lastError;

@@ -34,6 +34,8 @@ add_library(slotcore STATIC
     suntimes.h suntimes.cpp
     ntpcheck.h ntpcheck.cpp
     remoteserver.h remoteserver.cpp
+    mysqlstarter.h mysqlstarter.cpp
+    dbbackoff.h
 )
 target_link_libraries(slotcore PUBLIC Qt6::Core Qt6::Sql Qt6::Network Qt6::SerialPort)
 target_include_directories(slotcore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -59,6 +61,7 @@ set(WSPRSKED_APP_SOURCES
     mainwindow.ui
     slottablemodel.h slottablemodel.cpp
     msg.h msg.cpp
+    loaderror.h loaderror.cpp
     wspraudioout.h wspraudioout.cpp
     rxform.h rxform.cpp rxform.ui
     spectrumform.h spectrumform.cpp
@@ -139,6 +142,8 @@ if(WSPRSKED_TESTS)
     add_executable(rtf_test tests/rtf_test.cpp rtfhtml.cpp)   # help file RTF -> HTML
     target_link_libraries(rtf_test PRIVATE Qt6::Widgets)
     target_include_directories(rtf_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_executable(mysqlstarter_test tests/mysqlstarter_test.cpp)   # start-up MySQL check, with a fake server
+    target_link_libraries(mysqlstarter_test PRIVATE slotcore)
     add_executable(remote_test tests/remote_test.cpp)   # HTTPS remote page; needs openssl to make the certificate
     target_link_libraries(remote_test PRIVATE slotcore)
     add_executable(txplan_test tests/txplan_test.cpp)   # fake Arduino board, no hardware

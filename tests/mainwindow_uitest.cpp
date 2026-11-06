@@ -160,6 +160,22 @@ int main(int argc, char **argv)
     auto_.start(30);
     auto pump = [&](int ms = 100) { QEventLoop l; QTimer::singleShot(ms, &l, &QEventLoop::quit); l.exec(); };
 
+    {   // database not reachable at start-up: the LoadError message in the window (C#: LoadError form)
+        QSettings().setValue("db/password", "wrong-password");
+        MainWindow bad;
+        bad.show();
+        pump(500);
+        auto *le = bad.findChild<QLabel *>("loaderrorlabel");
+        CHECK(le && le->isVisible() && le->text().startsWith("Error whilst loading!")
+              && le->text().contains("Then re-run WSPR Scheduler.") && le->text().contains("Access denied")
+              && !le->text().contains("keeps trying"));
+        bad.grab().save("sked_load_error.png");
+        QSettings().remove("db/password");
+        for (QWidget *tl : QApplication::topLevelWidgets())
+            if (tl != &bad && tl->windowTitle() == "Transmissions received by this station") tl->hide();
+        sayNo = false;
+        bad.setAttribute(Qt::WA_DontShowOnScreen);
+    }
     MainWindow w;
     w.show();
     pump(500);

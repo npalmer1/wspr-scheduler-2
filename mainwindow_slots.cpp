@@ -5,6 +5,7 @@
 // Structure: SlotStore does all the SQL, planSlotTimes() works out repeat sets, SlotTableModel
 // shows one hour. The handlers here only move values between the widgets and those three.
 #include "mainwindow.h"
+#include "loaderror.h"
 #include "ui_mainwindow.h"
 #include "version.h"
 
@@ -14,6 +15,7 @@
 #include "slottablemodel.h"
 
 #include <QApplication>
+#include <QStatusBar>
 #include <QDir>
 #include <QSqlDatabase>
 #include <QHeaderView>
@@ -194,14 +196,21 @@ void MainWindow::Form1_Shown()
                 "MySQL driver not found");
         return;
     }
-    if (!m_store.slotDbReachable())
-        Msg::ok(this,
-                "Cannot reach the MySQL server or the slot database.\n\n"
-                "Server " + m_store.settings().host + ":" + QString::number(m_store.settings().port)
-                + ", user " + m_store.settings().user + ", database " + m_store.slotDbName() + ".\n"
-                "Check the server is running and the user/password (~/DBcredential, or the "
-                "db/host, db/user, db/password settings).\n\nMySQL said: " + m_store.lastError(),
-                "MySQL Not Running");
+    // C#: checkMySQLDatabases - "MySQL Not Running", or the LoadError form; here a message in the
+    // window, which goes once the database answers (setDbStatus)
+    if (!m_store.slotDbReachable()) {
+        if (!m_loadError)
+            m_loadError = new LoadErrorLabel("WSPR Scheduler", this);
+        // MySQL not installed, or it wouldn't start: say that (C#: "MySQL Not Running" /
+        // "XAMPP MySQL Start Failed"); otherwise it runs but the databases or the login aren't right
+        const QString why = MySqlStarter::message(m_mysqlStart, "WSPR Scheduler");
+        if (!why.isEmpty())
+            m_loadError->showText(why);
+        else
+            m_loadError->showError(m_store.lastError(), false);
+    } else if (m_mysqlStart.outcome == MySqlStarter::Outcome::Started) {
+        statusBar()->showMessage("MySQL wasn't running: started " + m_mysqlStart.how, 30000);
+    }
 }
 
 void MainWindow::setDbStatus(bool ok)
@@ -210,8 +219,11 @@ void MainWindow::setDbStatus(bool ok)
     ui->dblabel->setText(ok ? "Slot Database OK" : "Slot Database Error");
     ui->dblabel->setStyleSheet(QString("QLabel#dblabel { background-color: %1; }").arg(ok ? "lightblue" : "pink"));
     ui->dblabel->adjustSize();
-    if (ok)
+    if (ok) {
         m_showDbError = true;
+        if (m_loadError)
+            m_loadError->hide();   // the start-up "can't connect" message
+    }
 }
 
 // ---------------------------------------------------------------------------

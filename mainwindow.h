@@ -12,6 +12,7 @@
 #include "repeatplanner.h"
 #include "slotstore.h"
 #include "remoteserver.h"
+#include "mysqlstarter.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -35,6 +36,7 @@ class QLabel;
 class QPushButton;
 class QLineEdit;
 class SunFetcher;
+class LoadErrorLabel;
 
 class MainWindow : public QMainWindow
 {
@@ -364,6 +366,7 @@ private:                   // "Frequency correction (ppm)" (new)
     class QTextBrowser *m_helpText = nullptr;
 public:
     void showHelp();                       // C#: ShowHelp (F1)
+    void setMySqlStart(const MySqlStarter::Result &r) { m_mysqlStart = r; }   // what main() did about MySQL
 private:
 
     // ---- Remote tab (mainwindow_remote.cpp) ----
@@ -428,6 +431,8 @@ private:
     QString m_sunLocator;
     QDate m_selectedDate;
     bool m_dbOk = true;
+    LoadErrorLabel *m_loadError = nullptr;   // C#: LoadError - "can't connect" at start-up
+    MySqlStarter::Result m_mysqlStart{MySqlStarter::Outcome::AlreadyRunning, {}, {}};
     bool m_showDbError = true;
     int m_idleSeconds = 0;                 // C#: keypresses
     bool m_slotMoved = false;              // C#: currslotmoved

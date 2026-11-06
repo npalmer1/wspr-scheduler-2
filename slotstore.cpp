@@ -53,6 +53,7 @@ SlotStore::~SlotStore()
 
 void SlotStore::setSettings(const DbSettings &s)
 {
+    m_backoff.reset();
     m_settings = s;
     for (const QString &c : std::as_const(m_connections)) {
         QSqlDatabase d = QSqlDatabase::database(c, false);
@@ -86,8 +87,17 @@ QSqlDatabase SlotStore::db(const QString &database)
         d.setDatabaseName(database);
         d.setConnectOptions("MYSQL_OPT_CONNECT_TIMEOUT=3");
     }
-    if (!d.isOpen() && !d.open())
-        setError(d.lastError().text());
+    if (!d.isOpen()) {
+        QString err;
+        if (!m_backoff.mayTry(m_settings.host, m_settings.port, &err)) {
+            setError(err);   // tried a moment ago and failed: don't wait for the timeout again
+        } else if (!d.open()) {
+            setError(d.lastError().text());
+            m_backoff.failed(d.lastError().text());
+        } else {
+            m_backoff.ok();
+        }
+    }
     return d;
 }
 
@@ -95,9 +105,18 @@ QSqlDatabase SlotStore::db(const QString &database)
 bool SlotStore::exec(QSqlDatabase d, const QString &sql, const QVariantList &binds)
 {
     for (int attempt = 0; attempt < 2; ++attempt) {
-        if (!d.isOpen() && !d.open()) {
-            setError(d.lastError().text());
-            return false;
+        if (!d.isOpen()) {
+            QString err;
+            if (!m_backoff.mayTry(m_settings.host, m_settings.port, &err)) {
+                setError(err);
+                return false;
+            }
+            if (!d.open()) {
+                setError(d.lastError().text());
+                m_backoff.failed(d.lastError().text());
+                return false;
+            }
+            m_backoff.ok();
         }
         QSqlQuery q(d);
         q.prepare(sql);
@@ -124,7 +143,12 @@ bool SlotStore::slotDbReachable()
     if (q.exec("SELECT 1"))
         return true;
     d.close();
-    return d.open();
+    if (m_backoff.isDown())
+        return false;
+    if (d.open())
+        return true;
+    m_backoff.failed(d.lastError().text());
+    return false;
 }
 
 bool SlotStore::databaseExists(const QString &name)

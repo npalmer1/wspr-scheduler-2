@@ -62,7 +62,11 @@ RxStore::~RxStore()
     }
 }
 
-void RxStore::setSettings(const DbSettings &s) { m_settings = s; }
+void RxStore::setSettings(const DbSettings &s)
+{
+    m_settings = s;
+    m_backoff.reset();
+}
 
 QSqlDatabase RxStore::db(const QString &database)
 {
@@ -84,19 +88,35 @@ QSqlDatabase RxStore::db(const QString &database)
         d.setDatabaseName(database);
         d.setConnectOptions("MYSQL_OPT_CONNECT_TIMEOUT=3");
     }
-    if (!d.isOpen() && !d.open())
-        m_lastError = d.lastError().text();
+    if (!d.isOpen()) {
+        QString err;
+        if (!m_backoff.mayTry(m_settings.host, m_settings.port, &err)) {
+            m_lastError = err;   // tried a moment ago and failed: don't wait for the timeout again
+        } else if (!d.open()) {
+            m_lastError = d.lastError().text();
+            m_backoff.failed(m_lastError);
+        } else {
+            m_backoff.ok();
+        }
+    }
     return d;
 }
 
 // Runs a prepared statement, reconnecting once if the server dropped the connection.
 // Returns the executed query, or nullopt.
-static std::optional<QSqlQuery> run(QSqlDatabase d, const QString &sql, const QVariantList &binds, QString *err)
+static std::optional<QSqlQuery> run(QSqlDatabase d, const QString &sql, const QVariantList &binds, QString *err,
+                                    DbBackoff *backoff)
 {
     for (int attempt = 0; attempt < 2; ++attempt) {
-        if (!d.isOpen() && !d.open()) {
-            *err = d.lastError().text();
-            return std::nullopt;
+        if (!d.isOpen()) {
+            if (backoff->blocked(err))
+                return std::nullopt;   // tried a moment ago: don't wait for the connect timeout again
+            if (!d.open()) {
+                *err = d.lastError().text();
+                backoff->failed(*err);
+                return std::nullopt;
+            }
+            backoff->ok();
         }
         QSqlQuery q(d);
         q.setForwardOnly(true);
@@ -125,12 +145,12 @@ bool RxStore::insert(const RxSpot &s)
     return run(db(m_database), sql,
                {sqlTime(s.datetime), s.band, s.txSign, s.txLoc, s.frequency, s.power, s.snr, s.drift,
                 s.distance, s.azimuth, s.reporter, s.reporterLoc, s.dt},
-               &m_lastError).has_value();
+               &m_lastError, &m_backoff).has_value();
 }
 
 std::optional<int> RxStore::count()
 {
-    auto q = run(db(m_database), "SELECT COUNT(*) FROM received", {}, &m_lastError);
+    auto q = run(db(m_database), "SELECT COUNT(*) FROM received", {}, &m_lastError, &m_backoff);
     if (!q || !q->next())
         return std::nullopt;
     return q->value(0).toInt();
@@ -138,7 +158,7 @@ std::optional<int> RxStore::count()
 
 std::optional<QVector<RxSpot>> RxStore::select(const RxQuery &rq)
 {
-    auto q = run(db(m_database), rq.sql, rq.binds, &m_lastError);
+    auto q = run(db(m_database), rq.sql, rq.binds, &m_lastError, &m_backoff);
     if (!q)
         return std::nullopt;
     QVector<RxSpot> v;
@@ -196,13 +216,13 @@ bool RxStore::remove(const QDateTime &datetime, const QString &txSign, double fr
 {
     auto q = run(db(m_database),
                  "DELETE FROM received WHERE datetime = ? AND tx_sign = ? AND ABS(frequency - ?) < 0.0000005",
-                 {sqlTime(datetime), txSign, frequency}, &m_lastError);
+                 {sqlTime(datetime), txSign, frequency}, &m_lastError, &m_backoff);
     return q.has_value();
 }
 
 std::optional<RxConfig> RxStore::readConfig()
 {
-    auto q = run(db(m_database), "SELECT * FROM rxconfig", {}, &m_lastError);
+    auto q = run(db(m_database), "SELECT * FROM rxconfig", {}, &m_lastError, &m_backoff);
     if (!q)
         return std::nullopt;
     std::optional<RxConfig> c;
@@ -223,12 +243,12 @@ bool RxStore::saveConfig(const RxConfig &c)
                "INSERT INTO rxconfig(id,deep,quick,osd,upload) VALUES(0,?,?,?,?) "
                "ON DUPLICATE KEY UPDATE deep = VALUES(deep), quick = VALUES(quick), osd = VALUES(osd), "
                "upload = VALUES(upload)",
-               {c.deep, c.quick, c.osd, c.upload}, &m_lastError).has_value();
+               {c.deep, c.quick, c.osd, c.upload}, &m_lastError, &m_backoff).has_value();
 }
 
 std::optional<RxSettings> RxStore::readRxSettings()
 {
-    auto q = run(db("wspr_configs"), "SELECT * FROM rxsettings", {}, &m_lastError);
+    auto q = run(db("wspr_configs"), "SELECT * FROM rxsettings", {}, &m_lastError, &m_backoff);
     if (!q)
         return std::nullopt;
     std::optional<RxSettings> r;
@@ -260,5 +280,5 @@ bool RxStore::saveRxSettings(const RxSettings &s)
                "outlevel = VALUES(outlevel), inlevel = VALUES(inlevel), wsprdpath = VALUES(wsprdpath), "
                "samedev = VALUES(samedev)",
                {s.outputName, s.outputDevice, s.inputName, s.inputDevice, s.outLevel, s.inLevel, path, s.sameDevice},
-               &m_lastError).has_value();
+               &m_lastError, &m_backoff).has_value();
 }

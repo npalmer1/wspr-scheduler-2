@@ -363,3 +363,11 @@ pictures. Metafile pictures and Word drawing objects are not shown. Edits show t
 ## Database values
 Empty text is stored as '' rather than NULL (a null QString binds as NULL in Qt; the C# tables have
 NOT NULL text columns, so e.g. a TCP switch with no baud rate failed to save).
+
+## Start-up without MySQL
+- main.cpp: before the window opens, if the database is on this PC and port 3306 doesn't answer,
+  MySqlStarter tries to start it (Windows service MySQL80/MySQL84/MySQL/mysql/MariaDB, then XAMPP's
+  mysqld --standalone) and waits up to 20 s, showing "MySQL isn't running - starting it ...".
+- If it isn't installed / won't start, the LoadErrorLabel in the main window says so and why.
+- DbBackoff (shared by all stores): after a failure, no new connection attempt for 30 s, and every
+  attempt is preceded by a 0.3 s port check - so a missing server no longer freezes the window.

@@ -10,6 +10,7 @@
 //  - the call filter also finds type 3 decodes, stored as "<G4GCI/P>";
 //  - delete matches the frequency to within 0.5 Hz rather than exact floating-point equality;
 //  - one connection is kept open and reused (C# opened one per query).
+#include "dbbackoff.h"
 #include "rxspot.h"
 #include "slotstore.h"   // DbSettings
 
@@ -78,6 +79,7 @@ private:
     DbSettings m_settings;
     QString m_database;
     QString m_connPrefix;
+    DbBackoff m_backoff;       // no new connection attempts for a while after one failed
     QStringList m_connections;
     QString m_lastError;
 };
