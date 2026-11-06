@@ -25,6 +25,9 @@ std::optional<QByteArray> aes128CbcDecrypt(const QByteArray &cipher, const QByte
 // Returns nullopt if the file is missing or unreadable. homeDir defaults to the user's home.
 std::optional<QString> readDbPassword(const QString &homeDir = QString());
 
+// Second line of ~/DBcredential, "db_call: G4GCI" (written by WSPR Scheduler), or nullopt
+std::optional<QString> readDbCall(const QString &homeDir = QString());
+
 // Writes the file in the same format the C# app writes ("db_user: <user> db_pass: <cipher>")
 // (and "db_call: <base call>" on a second line, as the C# app does, when dbCall is given)
 bool writeDbCredential(const QString &user, const QString &password, const QString &homeDir = QString(),

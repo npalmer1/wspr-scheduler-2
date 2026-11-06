@@ -196,6 +196,22 @@ std::optional<QString> decrypt(const QString &base64Cipher, const QString &key)
     return QString::fromUtf8(*plain);
 }
 
+std::optional<QString> readDbCall(const QString &homeDir)
+{
+    QFile f(credentialPath(homeDir));
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
+        return std::nullopt;
+    QTextStream in(&f);
+    in.readLine();
+    const QString line = in.readLine().trimmed();
+    if (!line.startsWith("db_call:"))
+        return std::nullopt;
+    const QString call = line.mid(8).trimmed().toUpper();
+    if (call.isEmpty())
+        return std::nullopt;
+    return call;
+}
+
 std::optional<QString> readDbPassword(const QString &homeDir)
 {
     QFile f(credentialPath(homeDir));
