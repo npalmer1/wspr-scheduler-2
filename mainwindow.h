@@ -357,6 +357,15 @@ private:                   // "Frequency correction (ppm)" (new)
     QPushButton *m_rigTestButton = nullptr;             // on exit: settings, rigctl, audio; returns what failed
     bool m_closeConfirmed = false;
 
+    // ---- help window (mainwindow_help.cpp) ----
+    void setupHelp();
+    QString helpFile() const;              // C:\WSPR_Sked\wspr_sked2_help.rtf, else next to the program
+    QWidget *m_help = nullptr;             // C#: HelpForm
+    class QTextBrowser *m_helpText = nullptr;
+public:
+    void showHelp();                       // C#: ShowHelp (F1)
+private:
+
     // ---- Remote tab (mainwindow_remote.cpp) ----
     void setupRemote();
     bool startRemote(QString *error);      // (re)start the HTTPS server with m_remoteCfg

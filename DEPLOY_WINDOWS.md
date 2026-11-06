@@ -19,3 +19,8 @@
     opened: allow Private networks. The certificate is made with PowerShell the first time Save is pressed.
 5. Close the C# WSPR Sked first (both apps would use the same rig COM port, sound card and database).
 6. Tests (optional, need a scratch database, NOT the real one): configure with -DWSPRSKED_TESTS=ON.
+
+## Installer for SourceForge
+See installer/README.md: build Release in Qt Creator, then run installer\make_release.bat (needs Inno
+Setup 6 and the MySQL files in installer\thirdparty once). WsprSked.exe now carries an icon and the
+version (Explorer > Properties > Details), both from wsprsked.ico / wsprsked.rc.in.

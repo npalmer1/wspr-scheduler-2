@@ -21,6 +21,8 @@
 #include <QFileInfo>
 #include <QSerialPortInfo>
 #include <QTimer>
+#include <functional>
+#include <memory>
 
 QString MainWindow::hamlibPath() const { return ui->RigCtlPathtextBox->text().trimmed(); }
 
@@ -253,9 +255,16 @@ void MainWindow::startRigctld(bool announce)
         m_rig = std::make_unique<RigCtl>();
     m_rig->setAddress(m_rigCfg.ipv4.isEmpty() ? QString("127.0.0.1") : m_rigCfg.ipv4,
                       m_rigCfg.port.toInt() > 0 ? m_rigCfg.port.toInt() : 4532);
-    // C# waited 2 s and then looked for a process; this asks rigctld for the frequency
-    QTimer::singleShot(1500, this, [this, announce] {
-        const bool ok = RigctldProcess::isAnswering(m_rigCfg.ipv4, m_rigCfg.port.toInt(), 1000);
+    // C# waited 2 s and then looked for a process; this asks rigctld for the frequency, once a second
+    // for up to 8 s (opening the rig can take a few seconds, more with a slow CAT rate)
+    auto tries = std::make_shared<int>(0);
+    auto check = std::make_shared<std::function<void()>>();
+    *check = [this, announce, tries, check] {
+        const bool ok = RigctldProcess::isAnswering(m_rigCfg.ipv4, m_rigCfg.port.toInt(), 800);
+        if (!ok && ++*tries < 8 && m_rigctld->startedHere()) {
+            QTimer::singleShot(1000, this, [check] { (*check)(); });
+            return;
+        }
         setRigLabels(ok);
         if (ok) {
             getRigF();
@@ -270,7 +279,8 @@ void MainWindow::startRigctld(bool announce)
             Msg::ok(this, "rigctld is running but the rig is not answering - check the radio, COM port and baud rate."
                           + (out.isEmpty() ? QString() : "\n\nrigctld said:\n" + out.left(400)), "rigctld");
         }
-    });
+    };
+    QTimer::singleShot(1500, this, [check] { (*check)(); });
 }
 
 // C#: getRigF - every 30 s (seconds 2 and 38) and after rigctld starts

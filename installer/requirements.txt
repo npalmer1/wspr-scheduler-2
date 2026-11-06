@@ -1,0 +1,39 @@
+WSPR Scheduler 2 - what else this PC needs
+==========================================
+
+WSPR Scheduler 2 is the Qt version of WSPR Scheduler (WSPR Sked). It uses the same MySQL databases
+and DBcredential file as the C# version, so if WSPR Scheduler already runs on this PC, nothing else
+is needed. Don't run both at the same time: they would share the rig, the sound card and the database.
+.NET is NOT needed for this version.
+
+On a new PC:
+
+1. MySQL with the WSPR Scheduler databases - one of:
+   a) XAMPP (recommended): https://www.apachefriends.org/
+      In phpMyAdmin, Import C:\WSPR_Sked\wspr_db.sql (this installer puts it there), then add the
+      user "admin" with password "wspr" and all global privileges.
+   b) MySQL Community: run wspr_mysql_setup.exe from
+      https://sourceforge.net/projects/wspr-scheduler/files/
+      It installs MySQL Community 8, imports the databases and starts MySQL.
+   Use one or the other, not both (they both use port 3306).
+   The full steps are in "The WSPR Scheduler Database Configuration" on the SourceForge page.
+
+2. WSJT-X (free) - for wsprd.exe, which decodes the WSPR signals received
+   https://wsjt.sourceforge.io/wsjtx.html
+   Default folder: C:\WSJT\wsjtx\bin (another can be chosen on the RX & Sound config tab).
+
+3. Hamlib (free) - for rigctld.exe, if the rig is controlled through rigctld
+   https://github.com/Hamlib/Hamlib/releases
+   Choose its folder on the Rigctl rigs tab. Not needed for a rig on the Non Rigctl TX tab, or a rig
+   tuned by hand with VOX.
+
+4. A sound card connected to the rig (audio in and out).
+
+Recordings and wsprd files go in C:\WSPR_Sked.
+
+Transmitting starts in DRY RUN mode (nothing is keyed) until "Dry run" is unticked on the
+TX Configuration tab.
+
+Source code and bug reports: https://github.com/npalmer1/wspr-scheduler-2
+Downloads: https://sourceforge.net/projects/wspr-scheduler/files/
+WSPR Scheduler 2 is free software under the GNU General Public License v3.

@@ -270,6 +270,7 @@ MainWindow::~MainWindow()
         keyPtt(false, &err);
     }
     delete m_rx;                     // top-level window of its own (C#: no owner), so not a child
+    delete m_help;                   // likewise
     delete ui;
 }
 
@@ -512,6 +513,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *e)
         positionClockBar();
     if (e->type() == QEvent::MouseButtonPress)
         markActivity();   // any click counts as using the app (slot tracking pauses)
+    if (obj == ui->label145 && e->type() == QEvent::MouseButtonRelease) {
+        showHelp();       // "F1 Help" by the clock
+        return true;
+    }
     // KeyPreview: only the first delivery (to the focus widget), and only for this window
     if (e->type() == QEvent::KeyPress && obj == QApplication::focusWidget() && isAncestorOf(static_cast<QWidget *>(obj))
         && Form1_KeyDown_1(static_cast<QKeyEvent *>(e)))

@@ -138,6 +138,7 @@ void MainWindow::Form1_Load()
     setupHardwareTests();
     setupOtherRigs();
     setupRemote();
+    setupHelp();
 }
 
 void MainWindow::applyConfigToUi()
@@ -273,10 +274,7 @@ void MainWindow::markActivity()
 bool MainWindow::Form1_KeyDown_1(QKeyEvent *e)
 {
     markActivity();
-    if (e->key() == Qt::Key_F1) {
-        // TODO: help window (C#: ShowHelp opens C:\WSPR_Sked\main_help.rtf)
-        return true;
-    }
+    (void)e;   // F1 is a shortcut now (setupHelp), so it works wherever the focus is
     return false;
 }
 

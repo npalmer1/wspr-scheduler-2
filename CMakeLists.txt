@@ -52,6 +52,8 @@ set(WSPRSKED_APP_SOURCES
     mainwindow_tests.cpp
     mainwindow_otherrig.cpp
     mainwindow_remote.cpp
+    mainwindow_help.cpp
+    rtfhtml.h rtfhtml.cpp
     mainwindow.h
     version.h
     mainwindow.ui
@@ -64,7 +66,12 @@ set(WSPRSKED_APP_SOURCES
     rxcycle.h rxcycle.cpp
     wspraudioin.h wspraudioin.cpp
 )
-add_executable(WsprSked WIN32 main.cpp ${WSPRSKED_APP_SOURCES})
+if(WIN32)   # icon and version details for WsprSked.exe (Explorer, taskbar, installer)
+    set(WSPRSKED_ICON "${CMAKE_CURRENT_SOURCE_DIR}/wsprsked.ico")
+    configure_file(wsprsked.rc.in "${CMAKE_CURRENT_BINARY_DIR}/wsprsked.rc" @ONLY)
+    set(WSPRSKED_RC "${CMAKE_CURRENT_BINARY_DIR}/wsprsked.rc")
+endif()
+add_executable(WsprSked WIN32 main.cpp ${WSPRSKED_APP_SOURCES} ${WSPRSKED_RC})
 target_link_libraries(WsprSked PRIVATE slotcore Qt6::Widgets Qt6::Multimedia)
 target_compile_definitions(WsprSked PRIVATE WSPRSKED_VERSION="${PROJECT_VERSION}")
 
@@ -119,6 +126,9 @@ if(WSPRSKED_TESTS)
     target_link_libraries(txlog_test PRIVATE slotcore)
     add_executable(sun_ntp_test tests/sun_ntp_test.cpp)   # fake web and time servers; scratch MySQL optional
     target_link_libraries(sun_ntp_test PRIVATE slotcore)
+    add_executable(rtf_test tests/rtf_test.cpp rtfhtml.cpp)   # help file RTF -> HTML
+    target_link_libraries(rtf_test PRIVATE Qt6::Widgets)
+    target_include_directories(rtf_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_executable(remote_test tests/remote_test.cpp)   # HTTPS remote page; needs openssl to make the certificate
     target_link_libraries(remote_test PRIVATE slotcore)
     add_executable(txplan_test tests/txplan_test.cpp)   # fake Arduino board, no hardware

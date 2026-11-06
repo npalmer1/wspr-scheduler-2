@@ -2,11 +2,15 @@
 build*/
 CMakeLists.txt.user*
 *.autosave
+# Visual Studio (Open Folder runs its own CMake into out/)
+.vs/
+out/
+CMakeSettings.json
 # test and run-time files
 *.wav
 remote.pfx
 remote.ini
-./vs
-./out
-CMakeSettings.json
-gitpush.bat
+# installer: made by installer\make_release.bat / your own MySQL files
+installer/stage/
+installer/output/
+installer/thirdparty/

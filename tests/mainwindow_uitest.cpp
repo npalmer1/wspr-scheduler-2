@@ -36,6 +36,10 @@
 #include <QThread>
 #include <QTimeZone>
 #include <QTemporaryDir>
+#include <QTextBrowser>
+#include <QShortcut>
+#include <QDir>
+#include "rxspot.h"
 #include <QSslSocket>
 #include <QFile>
 #include "rigctl.h"
@@ -169,6 +173,63 @@ int main(int argc, char **argv)
         if (tabs->tabText(i).startsWith("Freq"))
             tabs->setCurrentIndex(i);
     pump(100);
+
+    // ---- help (F1 / "F1 Help"): wspr_sked2_help.rtf in a window of its own ----
+    {
+        // a copy next to the program is the fallback; C:\WSPR_Sked (here ~/WSPR_Sked) comes first
+        const QString helpPath = QCoreApplication::applicationDirPath() + "/wspr_sked2_help.rtf";
+        const QString dataHelp = QDir(Rx::defaultDataDir()).filePath("wspr_sked2_help.rtf");
+        QFile::remove(helpPath);
+        QFile::remove(dataHelp);
+        answered.clear();
+        w.showHelp();
+        pump(100);
+        CHECK(answered.filter("wspr_sked2_help.rtf not found in").size() == 1);
+        QFile hf(helpPath);
+        hf.open(QIODevice::WriteOnly);
+        hf.write("{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}{\\b WSPR Scheduler help}\\par Press F1 for this.\\par}");
+        hf.close();
+        bool f1 = false;
+        for (QShortcut *sc : w.findChildren<QShortcut *>())
+            if (sc->key() == QKeySequence(Qt::Key_F1)) f1 = true;
+        CHECK(f1);
+        auto *helpLabel = w.findChild<QLabel *>("label145");
+        QMouseEvent press(QEvent::MouseButtonPress, QPointF(2, 2), helpLabel->mapToGlobal(QPointF(2, 2)), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+        QMouseEvent release(QEvent::MouseButtonRelease, QPointF(2, 2), helpLabel->mapToGlobal(QPointF(2, 2)), Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+        QApplication::sendEvent(helpLabel, &press);
+        QApplication::sendEvent(helpLabel, &release);
+        pump(100);
+        QWidget *helpWin = nullptr;
+        for (QWidget *tl : QApplication::topLevelWidgets())
+            if (tl->objectName() == "helpWindow") helpWin = tl;
+        CHECK(helpWin && helpWin->isVisible() && helpWin->windowTitle() == "WSPR Scheduler 2 - Help");
+        if (helpWin) {
+            auto *tb = helpWin->findChild<QTextBrowser *>("helpText");
+            CHECK(tb && tb->toPlainText().contains("WSPR Scheduler help") && tb->toPlainText().contains("Press F1 for this."));
+            CHECK(!helpWin->isAncestorOf(&w) && helpWin->parentWidget() == nullptr);   // separate window
+            helpWin->close();
+        }
+        w.showHelp();   // opens again, same window
+        pump(50);
+        int helpWins = 0;
+        for (QWidget *tl : QApplication::topLevelWidgets())
+            if (tl->objectName() == "helpWindow") ++helpWins;
+        CHECK(helpWins == 1 && helpWin && helpWin->isVisible());
+        // the copy in the data folder wins over the one next to the program
+        QDir().mkpath(Rx::defaultDataDir());
+        QFile df(dataHelp);
+        df.open(QIODevice::WriteOnly);
+        df.write("{\\rtf1 Data folder copy\\par}");
+        df.close();
+        w.showHelp();
+        pump(50);
+        if (helpWin) {
+            CHECK(helpWin->findChild<QTextBrowser *>("helpText")->toPlainText().contains("Data folder copy"));
+            helpWin->close();
+        }
+        QFile::remove(helpPath);
+        QFile::remove(dataHelp);
+    }
 
     // ---- antennas from the database ----
     auto *ants = list("AntlistBox");

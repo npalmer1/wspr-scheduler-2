@@ -349,6 +349,17 @@ rig can't be tuned from here, which the reply says. The transmission is logged l
 - Reaching it from outside the house means forwarding the port on the router; a VPN to the home network
   is safer if you have one.
 
+## Help (`mainwindow_help.cpp`, `rtfhtml.*`, C#: ShowHelp + HelpForm)
+
+F1 (anywhere in the main window) or a click on "F1 Help" opens C:\WSPR_Sked\wspr_sked2_help.rtf in a
+window of its own, which stays open beside the main window. Its own name keeps it apart from the C#
+version's main_help.rtf in the same folder; it is there (not in Program Files) so it can be edited in
+WordPad without administrator rights, and the installer never replaces a copy already there. A copy next
+to the program is used if C:\WSPR_Sked has none; wspr_sked2_help.html is used if there is no .rtf.
+Qt can't show RTF, so the file is converted to HTML each time (rtfhtml.*): formatting, colours, fonts,
+alignment and indents, bullets/numbering, tables, hyperlinks (open in the browser) and PNG/JPEG
+pictures. Metafile pictures and Word drawing objects are not shown. Edits show the next time F1 is pressed.
+
 ## Database values
 Empty text is stored as '' rather than NULL (a null QString binds as NULL in Qt; the C# tables have
 NOT NULL text columns, so e.g. a TCP switch with no baud rate failed to save).
