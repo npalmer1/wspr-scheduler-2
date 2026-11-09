@@ -15,12 +15,22 @@ LoadErrorLabel::Kind LoadErrorLabel::kindFor(const QString &mysqlError)
 
 QString LoadErrorLabel::text(const QString &appName, Kind kind)
 {
-    if (kind == Kind::ServerNotRunning)   // C#: checkMySQLDatabases - "MySQL Not Running"
+    if (kind == Kind::ServerNotRunning) {   // C#: checkMySQLDatabases - "MySQL Not Running"
+#ifndef Q_OS_WIN
+        return "MySQL server is not running. Start it in a terminal with:\n"
+               "    sudo systemctl start mysql      (or mariadb)\n"
+               "and to have it start whenever the PC starts:\n"
+               "    sudo systemctl enable mysql\n\n"
+               "If it isn't installed:  sudo apt install mysql-server  - then add the admin user and import\n"
+               "the databases (wspr_db.sql): see the installation instructions.\n\n"
+               "Once you have done this, please restart " + appName + ".";
+#endif
         return "MySQL server is not running. You can either install XAMPP and import the databases\n"
                "...see the installation instructions to configure XAMPP.\n\n"
                "OR you can use MySQL Community as an alternative\n"
                "...you can run the 'wspr_mysql_setup.exe' installer to do this.\n\n"
                "Once you have done this, please restart " + appName + ".";
+    }
     // C#: LoadError.resx label1.Text
     return "Error whilst loading!\n"
            "The app cannot connect to the mySQL databases!\n"

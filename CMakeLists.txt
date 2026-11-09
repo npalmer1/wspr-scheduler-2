@@ -84,7 +84,7 @@ if(WIN32)   # icon and version details for the programs (Explorer, taskbar, inst
     endmacro()
     wspr_rc(WSPRSKED_RC "WSPR Scheduler 2" WsprSked ${PROJECT_VERSION})
 endif()
-add_executable(WsprSked WIN32 main.cpp ${WSPRSKED_APP_SOURCES} ${WSPRSKED_RC})
+add_executable(WsprSked WIN32 main.cpp appfont.h ${WSPRSKED_APP_SOURCES} ${WSPRSKED_RC})
 target_link_libraries(WsprSked PRIVATE slotcore Qt6::Widgets Qt6::Multimedia)
 target_compile_definitions(WsprSked PRIVATE WSPRSKED_VERSION="${PROJECT_VERSION}")
 

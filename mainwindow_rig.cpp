@@ -50,8 +50,18 @@ void MainWindow::setupRig()
     ui->PorttextBox->setToolTip("rigctld TCP port (normally 4532)");
 
     QString path = m_cfg.hamlibPath;
+#ifdef Q_OS_WIN
     if (path.isEmpty())
         path = "C:/WSPR_Sked";   // C#: HamlibPath default
+#else
+    // the Slots tab's hint is about Windows' administrator rights; on Linux it's the serial port group
+    ui->label71->setText("Hint: to use the rig's serial port your user\nmust be in the dialout group (hover here)");
+    ui->label71->setToolTip("sudo usermod -aG dialout $USER   - then log out and in again");
+    // Ubuntu's rigctld (sudo apt install libhamlib-utils) is in /usr/bin; a Windows path from a database
+    // copied from Windows means nothing here
+    if (path.isEmpty() || QRegularExpression("^[A-Za-z]:[\\\\/]").match(path).hasMatch())
+        path = "/usr/bin";
+#endif
     ui->RigCtlPathtextBox->setText(QDir::toNativeSeparators(path));
 
     getComports();
@@ -76,7 +86,11 @@ void MainWindow::getComports()
 {
     QStringList ports;
     for (const QSerialPortInfo &p : QSerialPortInfo::availablePorts())
-        ports << p.portName();
+#ifdef Q_OS_WIN
+        ports << p.portName();         // COM3
+#else
+        ports << p.systemLocation();   // /dev/ttyUSB0 (rigctld needs the whole path)
+#endif
     ports.sort();
     for (QComboBox *c : {ui->COMcomboBox, ui->HwPortcomboBox}) {
         const QString keep = c->currentText();

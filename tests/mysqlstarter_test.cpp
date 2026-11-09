@@ -7,6 +7,8 @@
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QTcpServer>
+#include <QFile>
+#include <QTemporaryDir>
 #include <QThread>
 #include <QTimer>
 #include <cstdio>
@@ -70,8 +72,13 @@ int main(int argc, char **argv)
         const Result r = ensureRunning("127.0.0.1", freePort(), 5, [](QString *, QString *) { return false; });
         CHECK(r.outcome == Outcome::NotInstalled);
         const QString m = message(r, "WSPR Scheduler");
+#ifdef Q_OS_WIN
         CHECK(m.startsWith("MySQL doesn't seem to be installed") && m.contains("wspr_mysql_setup.exe") && m.contains("XAMPP")
               && m.endsWith("please restart WSPR Scheduler."));
+#else
+        CHECK(m.startsWith("MySQL doesn't seem to be installed") && m.contains("sudo apt install mysql-server")
+              && !m.contains("XAMPP") && m.endsWith("please restart WSPR Scheduler."));
+#endif
     }
 
     // found, but it would not start (e.g. needs administrator rights)
@@ -86,6 +93,9 @@ int main(int argc, char **argv)
         const QString m = message(r, "WSPR Scheduler");
         CHECK(m.startsWith("MySQL was found (the Windows service MySQL80) but could not be started automatically.")
               && m.contains("administrator rights") && m.contains("port 3306"));
+#ifndef Q_OS_WIN
+        CHECK(m.contains("sudo systemctl enable --now mysql"));
+#endif
     }
 
     // started, but nothing ever answers (port taken by something else, or MySQL crashed)
@@ -104,6 +114,46 @@ int main(int argc, char **argv)
         const Result r = ensureRunning("192.0.2.5", 3306, 5, [&](QString *, QString *) { tried = true; return true; });
         CHECK(r.outcome == Outcome::NotLocal && !tried && message(r, "WSPR Scheduler").isEmpty());
     }
+
+#ifndef Q_OS_WIN
+    // Linux: the real start (no test start function) with stand-in systemctl and pkexec scripts on PATH
+    {
+        QTemporaryDir bin;
+        auto script = [&](const QString &name, const QString &body) {
+            QFile f(bin.filePath(name));
+            f.open(QIODevice::WriteOnly);
+            f.write(("#!/bin/sh\n" + body + "\n").toUtf8());
+            f.close();
+            f.setPermissions(f.permissions() | QFileDevice::ExeOwner);
+        };
+        const QByteArray oldPath = qgetenv("PATH");
+        qputenv("PATH", bin.path().toUtf8() + ":" + oldPath);
+        QFile::remove(bin.filePath("calls"));
+        // mysql is installed but stopped; the password is cancelled (pkexec exit 126)
+        script("systemctl", "echo \"$@\" >> " + bin.filePath("calls") + "\n"
+                            "case \"$*\" in\n"
+                            "  'show -p LoadState --value mysql') echo loaded ;;\n"
+                            "  show*) echo not-found ;;\n"
+                            "  'is-active mysql') echo inactive; exit 3 ;;\n"
+                            "esac");
+        script("pkexec", "echo \"pkexec $@\" >> " + bin.filePath("calls") + "\nexit 126");
+        Result r = ensureRunning("127.0.0.1", freePort(), 2);
+        CHECK(r.outcome == Outcome::StartFailed && r.how == "the mysql service" && r.detail.contains("needs your password"));
+        QFile calls(bin.filePath("calls"));
+        calls.open(QIODevice::ReadOnly);
+        CHECK(QString::fromUtf8(calls.readAll()).contains("pkexec systemctl start mysql"));
+        calls.close();
+        // the password is given: started, then waits for the port (nothing answers here: StartFailed after 2 s)
+        script("pkexec", "exit 0");
+        r = ensureRunning("127.0.0.1", freePort(), 2);
+        CHECK(r.outcome == Outcome::StartFailed && r.detail.contains("didn't answer within 2 seconds"));
+        // no mysql / mariadb service at all
+        script("systemctl", "echo not-found");
+        r = ensureRunning("127.0.0.1", freePort(), 2);
+        CHECK(r.outcome == Outcome::NotInstalled && message(r, "WSPR Scheduler").contains("sudo apt install mysql-server"));
+        qputenv("PATH", oldPath);
+    }
+#endif
 
     // the connection back-off
     {

@@ -7,6 +7,7 @@
 #include <QHostAddress>
 #include <QProcess>
 #include <QTcpSocket>
+#include <QStandardPaths>
 #include <QThread>
 
 namespace MySqlStarter {
@@ -36,7 +37,6 @@ QString xamppBase()
 }
 
 namespace {
-#ifdef Q_OS_WIN
 QString run(const QString &program, const QStringList &args, int *exitCode, int timeoutMs = 20000)
 {
     QProcess p;
@@ -52,6 +52,7 @@ QString run(const QString &program, const QStringList &args, int *exitCode, int 
     return QString::fromLocal8Bit(p.readAll()).trimmed();
 }
 
+#ifdef Q_OS_WIN
 // installed MySQL/MariaDB service that isn't running -> "net start"
 bool startService(QString *how, QString *detail, bool *found)
 {
@@ -96,6 +97,44 @@ bool startXampp(QString *how, QString *detail, bool *found)
 }
 #endif
 
+#ifndef Q_OS_WIN
+// Linux (Ubuntu): the mysql or mariadb systemd service; starting it needs root, so pkexec asks for the
+// password in the desktop's own window (the program itself never runs as root)
+bool startLinuxService(QString *how, QString *detail)
+{
+    if (QStandardPaths::findExecutable("systemctl").isEmpty()) {
+        *detail = "Start MySQL / MariaDB the way this Linux starts services.";
+        return false;
+    }
+    for (const QString &unit : {QStringLiteral("mysql"), QStringLiteral("mariadb"), QStringLiteral("mysqld")}) {
+        int code = 0;
+        const QString load = run("systemctl", {"show", "-p", "LoadState", "--value", unit}, &code, 10000);
+        if (code != 0 || load.trimmed() != "loaded")
+            continue;   // not installed under this name
+        *how = "the " + unit + " service";
+        if (run("systemctl", {"is-active", unit}, &code, 10000).trimmed() == "active")
+            return true;   // running, but the port didn't answer yet: wait for it
+        const QString pkexec = QStandardPaths::findExecutable("pkexec");
+        if (pkexec.isEmpty()) {
+            *detail = "Start it in a terminal with:\n    sudo systemctl start " + unit;
+            return false;
+        }
+        // the password window stays up as long as it takes: allow 2 minutes
+        const QString said = run(pkexec, {"systemctl", "start", unit}, &code, 120000);
+        if (code == 0)
+            return true;
+        if (code == 126 || code == 127)
+            *detail = "Starting the " + unit + " service needs your password (the request was cancelled or "
+                      "refused). Or start it in a terminal with:\n    sudo systemctl start " + unit;
+        else
+            *detail = "The " + unit + " service would not start: " + said.left(200)
+                      + "\nSee:  systemctl status " + unit;
+        return false;
+    }
+    return false;   // no service: not installed
+}
+#endif
+
 bool realStart(QString *how, QString *detail)
 {
 #ifdef Q_OS_WIN
@@ -111,9 +150,7 @@ bool realStart(QString *how, QString *detail)
         how->clear();
     return false;
 #else
-    Q_UNUSED(how);
-    *detail = "Start the MySQL / MariaDB service (e.g. sudo systemctl start mariadb).";
-    return false;
+    return startLinuxService(how, detail);
 #endif
 }
 } // namespace
@@ -153,6 +190,13 @@ QString message(const Result &r, const QString &appName)
 {
     switch (r.outcome) {
     case Outcome::NotInstalled:
+#ifndef Q_OS_WIN
+        return "MySQL doesn't seem to be installed on this PC (no mysql or mariadb service found).\n\n"
+               "Install it with:\n    sudo apt install mysql-server\n"
+               "then add the admin user and import the databases (wspr_db.sql) - see the installation "
+               "instructions.\n\n"
+               "Once you have done this, please restart " + appName + ".";
+#endif
         return "MySQL doesn't seem to be installed on this PC (no MySQL service and no XAMPP found).\n\n"
                "You can either install XAMPP and import the databases\n"
                "...see the installation instructions to configure XAMPP.\n\n"
@@ -160,6 +204,13 @@ QString message(const Result &r, const QString &appName)
                "...you can run the 'wspr_mysql_setup.exe' installer to do this.\n\n"
                "Once you have done this, please restart " + appName + ".";
     case Outcome::StartFailed:
+#ifndef Q_OS_WIN
+        return "MySQL was found (" + r.how + ") but could not be started automatically.\n\n"
+               + r.detail + "\n\n"
+               "To have it start by itself whenever the PC starts:\n    sudo systemctl enable --now mysql\n"
+               "(mariadb instead of mysql if that is what you use), and then restart " + appName + ".\n\n"
+               "Is another instance of MySQL or another app using port 3306?";
+#endif
         return "MySQL was found (" + r.how + ") but could not be started automatically.\n\n"
                + r.detail + "\n\n"
                "Please start MySQL - with the XAMPP Control Panel, or Services for MySQL Community - "

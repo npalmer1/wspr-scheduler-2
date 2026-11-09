@@ -41,6 +41,41 @@ QString executable(const QString &dir, const QString &name)
     return QStandardPaths::findExecutable(name);
 }
 
+QString serialDevice(const QString &port)
+{
+    const QString p = port.trimmed();
+#ifdef Q_OS_WIN
+    return p;
+#else
+    return p.isEmpty() || p.contains('/') ? p : "/dev/" + p;
+#endif
+}
+
+QString serialPortProblem(const QString &port)
+{
+#ifdef Q_OS_WIN
+    Q_UNUSED(port);
+    return QString();
+#else
+    const QString p = port.trimmed();
+    if (p.isEmpty())
+        return QString();
+    static const QRegularExpression win("^COM\\d+$", QRegularExpression::CaseInsensitiveOption);
+    if (win.match(p).hasMatch())
+        return p + " is a Windows port name: choose this PC's port for the rig (e.g. /dev/ttyUSB0) on the "
+                   "Rig control tab and Save";
+    const QString dev = serialDevice(p);
+    const QFileInfo fi(dev);
+    if (!fi.exists())
+        return dev + " not found - is the rig's USB lead plugged in? (the ports are listed again when you "
+                     "open the Rig control tab)";
+    if (!fi.isReadable() || !fi.isWritable())
+        return "No permission to use " + dev + ". Add yourself to the dialout group, then log out and in again:\n"
+               "    sudo usermod -aG dialout $USER";
+    return QString();
+#endif
+}
+
 int modelNumber(const QString &radio)
 {
     static const QRegularExpression re("^\\s*(\\d+)\\b");
@@ -82,7 +117,7 @@ QStringList rigctldArguments(const RigctlSettings &s)
 {
     QStringList a{"-m", QString::number(modelNumber(s.radio))};
     if (!s.comPort.trimmed().isEmpty())
-        a << "-r" << s.comPort.trimmed();
+        a << "-r" << serialDevice(s.comPort);
     if (!s.baud.trimmed().isEmpty())
         a << "-s" << s.baud.trimmed();
     a << "-T" << (s.ipv4.trimmed().isEmpty() ? QString("127.0.0.1") : s.ipv4.trimmed());
@@ -135,6 +170,10 @@ bool RigctldProcess::start(const QString &hamlibDir, const RigctlSettings &s)
     const QString exe = Hamlib::executable(hamlibDir, "rigctld");
     if (exe.isEmpty()) {
         m_error = "rigctld not found in " + QDir::toNativeSeparators(hamlibDir) + " or on PATH";
+        return false;
+    }
+    if (const QString why = Hamlib::serialPortProblem(s.comPort); !why.isEmpty()) {
+        m_error = why;   // rigctld would only say "Permission denied" / "No such file" and stop
         return false;
     }
     if (startedHere()) {

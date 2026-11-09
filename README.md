@@ -41,6 +41,26 @@ cmake --build build
 
 Tests need a scratch database, never the real one. Configure with `-DWSPRSKED_TESTS=ON`.
 
+## Linux (Ubuntu 24.04)
+
+WSPR Scheduler 2 runs on Linux too. On Ubuntu:
+
+```
+sudo apt install build-essential cmake git qtcreator qt6-base-dev qt6-tools-dev qt6-multimedia-dev \
+                 qt6-serialport-dev libqt6sql6-mysql mysql-server libhamlib-utils wsjtx fonts-liberation
+sudo usermod -aG dialout $USER      # use the rig's serial port (log out and in again afterwards)
+```
+
+- `libhamlib-utils` gives rigctld / rigctl (in /usr/bin), `wsjtx` gives wsprd (in /usr/bin).
+- Serial ports are /dev/ttyUSB0, /dev/ttyACM0 ... (a database copied from Windows still says COM3:
+  choose the port again on the Rig control tab and Save).
+- Files that are in C:\WSPR_Sked on Windows (wsprd's working files, the help file
+  wspr_sked2_help.rtf) are in ~/WSPR_Sked.
+- If MySQL isn't running, WSPR Scheduler offers to start it and Ubuntu asks for your password
+  (`sudo systemctl enable mysql` makes it start with the PC). The program itself never runs as root.
+- The PC clock is kept right by Ubuntu's own time service; WSPR Scheduler checks it and reports.
+- The windows are laid out for Windows' Segoe UI font: Liberation Sans (fonts-liberation) stands in.
+
 ## Licence
 
 GNU General Public License v3.0. See [LICENSE](LICENSE).

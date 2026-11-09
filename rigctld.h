@@ -40,6 +40,11 @@ namespace Hamlib {
 
 // rigctl / rigctld (.exe on Windows) in dir, else on PATH. Empty if not found.
 QString executable(const QString &dir, const QString &name);
+// The serial port as rigctld needs it: on Linux "/dev/ttyUSB0" (Qt lists "ttyUSB0"); Windows unchanged
+QString serialDevice(const QString &port);
+// Why rigctld couldn't open this port, before trying ("" = no problem seen): on Linux a Windows name
+// (COM3, from a database copied from Windows), a missing device, or no permission (the dialout group)
+QString serialPortProblem(const QString &port);
 // Model number from a rig-list line or a bare number: " 1046  Yaesu FT-450 ..." -> 1046; 0 if none
 int modelNumber(const QString &radio);
 // "rigctl -l" output -> the lines that describe a rig (header and blank lines dropped)

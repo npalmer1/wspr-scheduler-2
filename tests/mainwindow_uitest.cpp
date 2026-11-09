@@ -2,6 +2,7 @@
 // with Yes/OK. Covers the Freq&Ant tab: antennas (add / edit / rename in slots / delete) and the
 // per-frequency TX audio level. Saves screenshots of the tabs (tab_N.png) in the working directory.
 // Run with QT_QPA_PLATFORM=offscreen on a machine without a display.
+#include "appfont.h"
 #include "mainwindow.h"
 #include "slotstore.h"
 
@@ -130,9 +131,7 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     QCoreApplication::setOrganizationName("G4GCI-test");
     QCoreApplication::setApplicationName("WSPR Sked test");
-    QFont f = QApplication::font();   // as main.cpp
-    f.setPointSizeF(8.0);
-    QApplication::setFont(f);
+    applyAppFont();   // as main.cpp
 
     SlotStore probe;
     if (!probe.loadConfig()) {

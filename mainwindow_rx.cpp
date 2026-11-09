@@ -42,6 +42,14 @@ void MainWindow::setupReceiver()
         const QSignalBlocker b(ui->samecheckBox);
         ui->samecheckBox->setChecked(rs->sameDevice);
     }
+#ifndef Q_OS_WIN
+    // a Windows path from a database copied from Windows means nothing here; Ubuntu's wsjtx package puts
+    // wsprd in /usr/bin
+    if (QRegularExpression("^[A-Za-z]:[\\\\/]").match(m_wsprdPath).hasMatch())
+        m_wsprdPath.clear();
+    if (m_wsprdPath.isEmpty() && QFileInfo::exists("/usr/bin/wsprd"))
+        m_wsprdPath = "/usr/bin";
+#endif
     if (m_wsprdPath.isEmpty())
         m_wsprdPath = Rx::defaultDataDir();   // C#: root + "WSPR_Sked"
     ui->wsprdtextBox->setText(QDir::toNativeSeparators(m_wsprdPath));

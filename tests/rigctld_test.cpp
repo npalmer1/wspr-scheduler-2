@@ -40,7 +40,17 @@ int main(int argc, char **argv)
     s.radio = "  1046  Yaesu   FT-450  ...";
     s.comPort = "COM4";
     s.baud = "38400";
+#ifdef Q_OS_WIN
     CHECK(Hamlib::rigctldArguments(s) == (QStringList{"-m", "1046", "-r", "COM4", "-s", "38400", "-T", "127.0.0.1", "-t", "4532"}));
+#else
+    CHECK(Hamlib::rigctldArguments(s) == (QStringList{"-m", "1046", "-r", "/dev/COM4", "-s", "38400", "-T", "127.0.0.1", "-t", "4532"}));
+    CHECK(Hamlib::serialDevice("ttyUSB0") == "/dev/ttyUSB0" && Hamlib::serialDevice("/dev/ttyACM0") == "/dev/ttyACM0"
+          && Hamlib::serialDevice("").isEmpty());
+    CHECK(Hamlib::serialPortProblem("COM4").contains("Windows port name"));
+    CHECK(Hamlib::serialPortProblem("ttyNOSUCH9").contains("not found"));
+    CHECK(Hamlib::serialPortProblem("/dev/null").isEmpty());   // exists, readable and writable
+    CHECK(Hamlib::serialPortProblem("").isEmpty());
+#endif
 
     if (Hamlib::executable(dir, "rigctld").isEmpty()) {
         std::printf("rigctld_test: Hamlib not found, process tests skipped\n");
@@ -76,6 +86,10 @@ int main(int argc, char **argv)
         bad.radio = "1046";
         bad.comPort = "/dev/does-not-exist";
         bad.port = "4598";
+#ifndef Q_OS_WIN
+        // Linux: the port is checked first, with a reason rigctld itself wouldn't give
+        CHECK(!p.start(dir, bad) && p.error().contains("/dev/does-not-exist not found"));
+#else
         int exitCode = -999;
         QObject::connect(&p, &RigctldProcess::exited, [&](int c, const QString &) { exitCode = c; });
         CHECK(p.start(dir, bad));
@@ -88,6 +102,7 @@ int main(int argc, char **argv)
         std::printf("  rigctld with a missing port: exit %d, said: %s\n", exitCode,
                     qPrintable(p.lastOutput().trimmed().left(120)));
         CHECK(exitCode != -999 || !RigctldProcess::isAnswering("127.0.0.1", 4598, 300));
+#endif
         p.stop();
     }
 
