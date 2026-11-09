@@ -5495,7 +5495,7 @@ Switch</string>
         <widget class="QLabel" name="HwPortlabel">
          <property name="geometry">
           <rect>
-           <x>150</x>
+           <x>160</x>
            <y>82</y>
            <width>29</width>
            <height>13</height>
@@ -5522,7 +5522,7 @@ Switch</string>
          <property name="geometry">
           <rect>
            <x>350</x>
-           <y>81</y>
+           <y>80</y>
            <width>131</width>
            <height>20</height>
           </rect>
@@ -5531,7 +5531,7 @@ Switch</string>
         <widget class="QLabel" name="BPlabel">
          <property name="geometry">
           <rect>
-           <x>310</x>
+           <x>320</x>
            <y>84</y>
            <width>35</width>
            <height>13</height>
@@ -5544,8 +5544,8 @@ Switch</string>
         <widget class="QComboBox" name="HwBaudcomboBox">
          <property name="geometry">
           <rect>
-           <x>350</x>
-           <y>82</y>
+           <x>348</x>
+           <y>80</y>
            <width>105</width>
            <height>22</height>
           </rect>
