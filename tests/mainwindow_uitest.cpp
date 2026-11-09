@@ -586,7 +586,7 @@ int main(int argc, char **argv)
             CHECK(out->toPlainText().startsWith("Type 1, slot 1: G4GCI IO90"));   // plain call: one type 1
             t2->setChecked(false);
         }
-        CHECK(t.windowTitle().contains("V.0.2.2") && t.windowTitle().contains("GNU GPLv3"));
+        CHECK(t.windowTitle().contains("V.0.2.3") && t.windowTitle().contains("GNU GPLv3"));
         CHECK(dry && dry->isChecked() && t.isDryRun());
         enable->setChecked(true);
         CHECK(t.findChild<QPushButton *>("TXenablebutton")->text() == "TX on (dry run)");
