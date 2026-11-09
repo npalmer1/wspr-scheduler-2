@@ -113,6 +113,25 @@ if(WIN32)
     endif()
 endif()
 
+
+# Linux: "cmake --install" (linux/install.sh does it): the program, a menu entry and icon, and in
+# share/wspr-scheduler-2 the help file and the blank databases, when they are in linux/ (or in
+# installer/thirdparty, as for the Windows installer)
+if(UNIX AND NOT APPLE)
+    include(GNUInstallDirs)
+    install(TARGETS WsprSked RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(FILES linux/wspr-scheduler-2.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+    install(FILES linux/wspr-scheduler-2.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps)
+    foreach(f wspr_sked2_help.rtf wspr_db.sql)
+        foreach(d linux installer/thirdparty)
+            if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${d}/${f}")
+                install(FILES "${d}/${f}" DESTINATION ${CMAKE_INSTALL_DATADIR}/wspr-scheduler-2)
+                break()
+            endif()
+        endforeach()
+    endforeach()
+endif()
+
 option(WSPRSKED_TESTS "Build the slot store / repeat planner tests (needs a scratch MySQL)" OFF)
 if(WSPRSKED_TESTS)
     add_executable(slots_test tests/slots_test.cpp)

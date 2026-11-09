@@ -35,7 +35,10 @@ void MainWindow::setupHelp()
 
 QString MainWindow::helpFile() const
 {
-    const QStringList dirs{Rx::defaultDataDir(), QCoreApplication::applicationDirPath()};
+    // ~/WSPR_Sked (C:\\WSPR_Sked), next to the program, and on Linux where "cmake --install" puts it
+    // (/usr/local/share/wspr-scheduler-2)
+    const QString app = QCoreApplication::applicationDirPath();
+    const QStringList dirs{Rx::defaultDataDir(), app, QDir(app).filePath("../share/wspr-scheduler-2")};
     for (const QString &name : {QStringLiteral("wspr_sked2_help.rtf"), QStringLiteral("wspr_sked2_help.html")})
         for (const QString &d : dirs) {
             const QString p = QDir(d).filePath(name);

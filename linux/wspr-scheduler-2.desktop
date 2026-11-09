@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=WSPR Scheduler 2
+GenericName=WSPR transmit/receive scheduler
+Comment=Schedule WSPR transmissions and receive slots, control the rig with Hamlib
+Exec=WsprSked
+Icon=wspr-scheduler-2
+Terminal=false
+Categories=Network;HamRadio;
+Keywords=WSPR;ham;radio;hamlib;rigctl;
