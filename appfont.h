@@ -16,6 +16,9 @@ inline void applyAppFont()
         // (Selawik is Microsoft's free stand-in; Liberation Sans comes with Ubuntu, else
         // sudo apt install fonts-liberation), for the whole window.
         QFont::insertSubstitutions("Segoe UI", {"Selawik", "Liberation Sans", "Arimo", "Noto Sans", "DejaVu Sans"});
+        // mainwindow.ui itself uses Microsoft Sans Serif (Arial-like) and Consolas (monospaced)
+        QFont::insertSubstitutions("Microsoft Sans Serif", {"Liberation Sans", "Arimo", "Noto Sans", "DejaVu Sans"});
+        QFont::insertSubstitutions("Consolas", {"Liberation Mono", "Cousine", "DejaVu Sans Mono", "Noto Sans Mono"});
         QFont base = QApplication::font();
         base.setFamilies({"Segoe UI"});
         QApplication::setFont(base);

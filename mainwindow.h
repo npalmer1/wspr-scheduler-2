@@ -345,6 +345,9 @@ private:                   // "Frequency correction (ppm)" (new)
     void setRigBoxes(bool serial);         // C#: setrigBoxes
     void layoutRigEditor();
     void openRigEditor(const OtherRig &r, bool isNew);
+    // a label ("Baud:" / "IP:" / "Port:") right-aligned, ending just before the box it names (the boxes
+    // change with serial / network, and the short "IP:" stood well away from its box)
+    static void placeLabelBeside(QLabel *label, const QWidget *box);
     QString otherRigCommand(QString cmd, const SlotRecord &s) const;   // freq call grid pwr offset filled in
     bool sendOtherRig(const QString &commands, QString *error, bool checkReply = false);   // C#: sendOtherTXRigCommand
     QLineEdit *m_rigCheckReply = nullptr;  // "Reply to TX command" (new): empty = no reply expected

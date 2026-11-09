@@ -178,6 +178,13 @@ void MainWindow::editHW(const QString &table)
     ui->HwtextBox->setFocus();
 }
 
+void MainWindow::placeLabelBeside(QLabel *label, const QWidget *box)
+{
+    label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    const int w = qMax(label->width(), label->fontMetrics().horizontalAdvance(label->text()) + 2);
+    label->setGeometry(box->x() - 5 - w, box->y() + (box->height() - label->height()) / 2, w, label->height());
+}
+
 void MainWindow::setHwBoxes(bool serial)
 {
     ui->HwPortcomboBox->setVisible(serial);
@@ -185,6 +192,8 @@ void MainWindow::setHwBoxes(bool serial)
     ui->HwPorttextBox->setVisible(!serial);
     ui->HwIPtextBox->setVisible(!serial);
     ui->BPlabel->setText(serial ? "Baud:" : "IP:");
+    placeLabelBeside(ui->BPlabel, serial ? static_cast<QWidget *>(ui->HwBaudcomboBox) : ui->HwIPtextBox);
+    placeLabelBeside(ui->HwPortlabel, serial ? static_cast<QWidget *>(ui->HwPortcomboBox) : ui->HwPorttextBox);
     ui->BPlabel->setVisible(true);
     ui->HwPortlabel->setVisible(true);
     ui->HwSerialgroupBox->setVisible(serial);

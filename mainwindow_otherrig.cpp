@@ -186,6 +186,8 @@ void MainWindow::setRigBoxes(bool serial)
     ui->APIgroupBox->setVisible(!serial);
     ui->apiinfolabel->setVisible(!serial);
     ui->rigBPlabel->setText(serial ? "Baud:" : "IP:");
+    placeLabelBeside(ui->rigBPlabel, serial ? static_cast<QWidget *>(ui->rigbaudcomboBox) : ui->rigiptextBox);
+    placeLabelBeside(ui->rigportlabel, serial ? static_cast<QWidget *>(ui->rigportcomboBox) : ui->rigporttextBox);
     ui->rigBPlabel->setVisible(true);
     ui->rigportlabel->setVisible(true);
     if (serial) {

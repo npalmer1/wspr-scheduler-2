@@ -36,7 +36,7 @@
     <item>
      <widget class="QTabWidget" name="tabControl1">
       <property name="currentIndex">
-       <number>4</number>
+       <number>6</number>
       </property>
       <widget class="QWidget" name="tabPage1">
        <property name="styleSheet">
@@ -6897,9 +6897,9 @@ Level</string>
         <widget class="QComboBox" name="rigportcomboBox">
          <property name="geometry">
           <rect>
-           <x>185</x>
+           <x>180</x>
            <y>63</y>
-           <width>63</width>
+           <width>100</width>
            <height>22</height>
           </rect>
          </property>
@@ -6910,17 +6910,17 @@ Level</string>
         <widget class="QLineEdit" name="rigiptextBox">
          <property name="geometry">
           <rect>
-           <x>286</x>
+           <x>330</x>
            <y>65</y>
-           <width>131</width>
-           <height>20</height>
+           <width>132</width>
+           <height>22</height>
           </rect>
          </property>
         </widget>
         <widget class="QLabel" name="rigBPlabel">
          <property name="geometry">
           <rect>
-           <x>254</x>
+           <x>300</x>
            <y>68</y>
            <width>35</width>
            <height>13</height>
@@ -6933,7 +6933,7 @@ Level</string>
         <widget class="QComboBox" name="rigbaudcomboBox">
          <property name="geometry">
           <rect>
-           <x>297</x>
+           <x>330</x>
            <y>66</y>
            <width>105</width>
            <height>22</height>
@@ -7031,10 +7031,10 @@ Level</string>
         <widget class="QLineEdit" name="rigporttextBox">
          <property name="geometry">
           <rect>
-           <x>185</x>
+           <x>183</x>
            <y>63</y>
            <width>63</width>
-           <height>20</height>
+           <height>22</height>
           </rect>
          </property>
         </widget>

@@ -41,6 +41,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    // always open on the Slots tab: Qt Designer saves whichever tab was showing when the .ui was saved
+    ui->tabControl1->setCurrentIndex(0);
     setupClockBar();          // clock on the tab row, as the C# form
     setupCalendars();         // two months side by side + "Today", as the C# MonthCalendar
     makeRoomForCalendar();    // taller window if the calendar's font needs more height
