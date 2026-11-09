@@ -36,7 +36,7 @@
     <item>
      <widget class="QTabWidget" name="tabControl1">
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="tabPage1">
        <property name="styleSheet">
@@ -5510,8 +5510,8 @@ Switch</string>
           <rect>
            <x>185</x>
            <y>79</y>
-           <width>49</width>
-           <height>22</height>
+           <width>101</width>
+           <height>21</height>
           </rect>
          </property>
          <property name="editable">
@@ -5521,7 +5521,7 @@ Switch</string>
         <widget class="QLineEdit" name="HwIPtextBox">
          <property name="geometry">
           <rect>
-           <x>286</x>
+           <x>350</x>
            <y>81</y>
            <width>131</width>
            <height>20</height>
@@ -5531,7 +5531,7 @@ Switch</string>
         <widget class="QLabel" name="BPlabel">
          <property name="geometry">
           <rect>
-           <x>254</x>
+           <x>310</x>
            <y>84</y>
            <width>35</width>
            <height>13</height>
@@ -5544,7 +5544,7 @@ Switch</string>
         <widget class="QComboBox" name="HwBaudcomboBox">
          <property name="geometry">
           <rect>
-           <x>297</x>
+           <x>350</x>
            <y>82</y>
            <width>105</width>
            <height>22</height>
@@ -5642,10 +5642,10 @@ Switch</string>
         <widget class="QLineEdit" name="HwPorttextBox">
          <property name="geometry">
           <rect>
-           <x>185</x>
-           <y>79</y>
-           <width>63</width>
-           <height>20</height>
+           <x>190</x>
+           <y>80</y>
+           <width>81</width>
+           <height>21</height>
           </rect>
          </property>
         </widget>
@@ -5654,7 +5654,7 @@ Switch</string>
           <rect>
            <x>32</x>
            <y>176</y>
-           <width>411</width>
+           <width>431</width>
            <height>41</height>
           </rect>
          </property>
@@ -5664,7 +5664,7 @@ Switch</string>
          <widget class="QLabel" name="label64">
           <property name="geometry">
            <rect>
-            <x>91</x>
+            <x>100</x>
             <y>16</y>
             <width>36</width>
             <height>13</height>
@@ -5677,7 +5677,7 @@ Switch</string>
          <widget class="QLabel" name="label65">
           <property name="geometry">
            <rect>
-            <x>280</x>
+            <x>310</x>
             <y>17</y>
             <width>32</width>
             <height>13</height>
@@ -5690,9 +5690,9 @@ Switch</string>
          <widget class="QComboBox" name="HwParitycomboBox">
           <property name="geometry">
            <rect>
-            <x>133</x>
+            <x>140</x>
             <y>13</y>
-            <width>61</width>
+            <width>71</width>
             <height>21</height>
            </rect>
           </property>
@@ -5718,7 +5718,7 @@ Switch</string>
          <widget class="QLabel" name="label67">
           <property name="geometry">
            <rect>
-            <x>200</x>
+            <x>230</x>
             <y>17</y>
             <width>32</width>
             <height>13</height>
@@ -5731,9 +5731,9 @@ Switch</string>
          <widget class="QComboBox" name="HwStopcomboBox">
           <property name="geometry">
            <rect>
-            <x>240</x>
+            <x>260</x>
             <y>14</y>
-            <width>31</width>
+            <width>41</width>
             <height>21</height>
            </rect>
           </property>
@@ -5790,7 +5790,7 @@ Switch</string>
          <widget class="QComboBox" name="HwFlowcomboBox">
           <property name="geometry">
            <rect>
-            <x>310</x>
+            <x>350</x>
             <y>13</y>
             <width>68</width>
             <height>21</height>
