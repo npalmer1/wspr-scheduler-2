@@ -1,0 +1,4 @@
+# Windows files keep Windows line endings
+*.bat text eol=crlf
+*.iss text eol=crlf
+installer/requirements.txt text eol=crlf
