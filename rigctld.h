@@ -45,6 +45,11 @@ QString serialDevice(const QString &port);
 // Why rigctld couldn't open this port, before trying ("" = no problem seen): on Linux a Windows name
 // (COM3, from a database copied from Windows), a missing device, or no permission (the dialout group)
 QString serialPortProblem(const QString &port);
+// The serial ports that are really there, USB ones (ttyUSB / ttyACM) first. On Linux, Qt lists every
+// /dev/ttyS0..31 whether or not the PC has that port; the ones with no hardware behind them are left out.
+QStringList serialPortNames();
+// Linux: true for a /dev/ttyS port the kernel knows has no UART fitted (always false on Windows)
+bool isPhantomSerialPort(const QString &port);
 // Model number from a rig-list line or a bare number: " 1046  Yaesu FT-450 ..." -> 1046; 0 if none
 int modelNumber(const QString &radio);
 // "rigctl -l" output -> the lines that describe a rig (header and blank lines dropped)

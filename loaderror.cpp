@@ -18,10 +18,10 @@ QString LoadErrorLabel::text(const QString &appName, Kind kind)
     if (kind == Kind::ServerNotRunning) {   // C#: checkMySQLDatabases - "MySQL Not Running"
 #ifndef Q_OS_WIN
         return "MySQL server is not running. Start it in a terminal with:\n"
-               "    sudo systemctl start mysql      (or mariadb)\n"
+               "    sudo systemctl start mariadb    (or mysql)\n"
                "and to have it start whenever the PC starts:\n"
-               "    sudo systemctl enable mysql\n\n"
-               "If it isn't installed:  sudo apt install mysql-server  - then add the admin user and import\n"
+               "    sudo systemctl enable mariadb\n\n"
+               "If it isn't installed:  sudo apt install mariadb-server  - then add the admin user and import\n"
                "the databases (wspr_db.sql): see the installation instructions.\n\n"
                "Once you have done this, please restart " + appName + ".";
 #endif

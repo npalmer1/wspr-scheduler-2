@@ -20,6 +20,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QSerialPortInfo>
+#include <QStatusBar>
 #include <QTimer>
 #include <functional>
 #include <memory>
@@ -84,22 +85,18 @@ void MainWindow::setupRig()
 // C#: getComports - also fills the Switches tab's port list
 void MainWindow::getComports()
 {
-    QStringList ports;
-    for (const QSerialPortInfo &p : QSerialPortInfo::availablePorts())
-#ifdef Q_OS_WIN
-        ports << p.portName();         // COM3
-#else
-        ports << p.systemLocation();   // /dev/ttyUSB0 (rigctld needs the whole path)
-#endif
-    ports.sort();
+    // COM3 / ttyUSB0: short enough for the boxes; rigctld is given /dev/ttyUSB0 (Hamlib::serialDevice).
+    // Only ports that are there, USB first.
+    const QStringList ports = Hamlib::serialPortNames();
     for (QComboBox *c : {ui->COMcomboBox, ui->HwPortcomboBox}) {
         const QString keep = c->currentText();
         const QSignalBlocker b(c);
         c->clear();
         c->addItems(ports);
-        if (!keep.isEmpty() && c->findText(keep) < 0)
-            c->addItem(keep);   // saved port not plugged in: keep it visible
-        c->setCurrentIndex(c->findText(keep));
+        // a saved USB port that is unplugged stays visible; a ttyS port with nothing behind it doesn't
+        if (!keep.isEmpty() && c->findText(keep) < 0 && !Hamlib::isPhantomSerialPort(keep))
+            c->addItem(keep);
+        c->setCurrentIndex(qMax(0, c->findText(keep)));   // nothing saved (or a phantom port): the first, a USB one
     }
 }
 
@@ -290,8 +287,10 @@ void MainWindow::startRigctld(bool announce)
             const int i = out.indexOf("rig_open");
             if (i >= 0)
                 out = out.mid(i);
-            Msg::ok(this, "rigctld is running but the rig is not answering - check the radio, COM port and baud rate."
-                          + (out.isEmpty() ? QString() : "\n\nrigctld said:\n" + out.left(400)), "rigctld");
+            // not a blocking box: if it opened behind the main window, WSPR Scheduler looked hung
+            const QString text = "rigctld is running but the rig is not answering - check the radio, port and baud rate.";
+            statusBar()->showMessage(text, 30000);
+            Msg::timed(this, text + (out.isEmpty() ? QString() : "\n\nrigctld said:\n" + out.left(400)), "rigctld", 12000);
         }
     };
     QTimer::singleShot(1500, this, [check] { (*check)(); });

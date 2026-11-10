@@ -25,7 +25,9 @@ Tested on Ubuntu 24.04. Debian 12 and Raspberry Pi OS (64-bit, Bookworm) should 
 - Installs git if it isn't there, and gets the source: clones it into `~/wspr-scheduler-2` (another
   folder with `--dir`), or if it's already there, pulls the latest version.
 - Installs what WSPR Scheduler 2 needs: Qt 6 and its MySQL driver, Hamlib (`rigctld`), WSJT-X (`wsprd`,
-  for decoding), MySQL, the Liberation fonts, and the compiler and CMake to build it.
+  for decoding), the database server, the Liberation fonts, and the compiler and CMake to build it.
+  The database server is **MariaDB** (the same as XAMPP's on Windows), unless the PC already has MySQL,
+  which is then kept - WSPR Scheduler works with either.
 - Builds WSPR Scheduler 2 and installs it in `/usr/local`, with a menu entry.
 - Adds your user to the `dialout` (serial ports) and `audio` (sound card) groups.
 - Starts MySQL and sets it to start with the PC, adds the `admin` database user (it asks for the password
@@ -56,6 +58,14 @@ and import them on Linux with `sudo mysql < wspr_backup.sql` **instead of** wspr
 Scheduler 2, choose the rig's port again on the Rigctl rigs tab (Linux ports are `ttyUSB0`, `ttyACM0`...,
 not `COM3`) and the sound card on the RX & Sound config tab.
 
+From XAMPP (MariaDB) that's all. If the Windows PC has **MySQL 8** (e.g. installed with
+`wspr_mysql_setup.exe`), its export may name a text collation MariaDB doesn't know, and the import stops
+with "Unknown collation: 'utf8mb4_0900_ai_ci'". Change it first, then import:
+
+```
+sed -i 's/utf8mb4_0900_ai_ci/utf8mb4_general_ci/g' wspr_backup.sql
+```
+
 ## Update
 
 Run the script again:
@@ -84,7 +94,7 @@ as it is.
 | Port "No permission" | `groups` must show `dialout`; log out and in again |
 | Port "not found" | `ls /dev/ttyUSB* /dev/ttyACM*` with the rig's lead plugged in |
 | No sound devices | `aplay -l` should list cards; if only `sudo aplay -l` does, you're not in the `audio` group yet |
-| MySQL not running | `sudo systemctl status mysql` (or `mariadb`); `sudo systemctl enable --now mysql` |
+| Database not running | `sudo systemctl status mariadb` (or `mysql`); `sudo systemctl enable --now mariadb` |
 | "Error whilst loading" / can't log in | the `admin` password: `sudo mysql -e "ALTER USER 'admin'@'localhost' IDENTIFIED BY 'wspr'; ALTER USER 'admin'@'127.0.0.1' IDENTIFIED BY 'wspr';"` |
 | Clock | `timedatectl` should say `System clock synchronized: yes` |
 

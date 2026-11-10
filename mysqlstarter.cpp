@@ -192,7 +192,7 @@ QString message(const Result &r, const QString &appName)
     case Outcome::NotInstalled:
 #ifndef Q_OS_WIN
         return "MySQL doesn't seem to be installed on this PC (no mysql or mariadb service found).\n\n"
-               "Install it with:\n    sudo apt install mysql-server\n"
+               "Install it with:\n    sudo apt install mariadb-server\n"
                "then add the admin user and import the databases (wspr_db.sql) - see the installation "
                "instructions.\n\n"
                "Once you have done this, please restart " + appName + ".";
@@ -207,8 +207,8 @@ QString message(const Result &r, const QString &appName)
 #ifndef Q_OS_WIN
         return "MySQL was found (" + r.how + ") but could not be started automatically.\n\n"
                + r.detail + "\n\n"
-               "To have it start by itself whenever the PC starts:\n    sudo systemctl enable --now mysql\n"
-               "(mariadb instead of mysql if that is what you use), and then restart " + appName + ".\n\n"
+               "To have it start by itself whenever the PC starts:\n    sudo systemctl enable --now mariadb\n"
+               "(mysql instead of mariadb if that is what you use), and then restart " + appName + ".\n\n"
                "Is another instance of MySQL or another app using port 3306?";
 #endif
         return "MySQL was found (" + r.how + ") but could not be started automatically.\n\n"

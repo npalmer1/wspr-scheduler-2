@@ -1,5 +1,5 @@
 @echo off
-cd /d C:\WSPR-Sked-2 || (echo Folder C:\WSPR-Sked-2 not found & pause & exit /b 1)
+cd /d D:\WSPR-Sked-2 || (echo Folder D:\WSPR-Sked-2 not found & pause & exit /b 1)
 git add -A
 echo.
 echo Changes to be committed:

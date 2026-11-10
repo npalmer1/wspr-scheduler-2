@@ -98,7 +98,7 @@ target_link_libraries(wsprrx PRIVATE slotcore Qt6::Multimedia)
 
 # Windows: copy the Qt DLLs and plugins next to the programs after each build (windeployqt), so they
 # also run from a plain command prompt or Explorer, not only from Qt Creator.
-# The MySQL driver (sqldrivers/qsqlmysql.dll) and libmysql.dll are not part of Qt - copy those yourself.
+# The MySQL driver (sqldrivers/qsqlmysql.dll) and libmysql.dll are not part of Qt - they're copied from installer/thirdparty.
 if(WIN32)
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt
         HINTS "${QT6_INSTALL_PREFIX}/bin" "${Qt6_DIR}/../../../bin")
@@ -110,6 +110,22 @@ if(WIN32)
         endforeach()
     else()
         message(WARNING "windeployqt not found - run the programs from Qt Creator or add the Qt bin folder to PATH")
+    endif()
+    # The MySQL driver and its DLLs, from installer/thirdparty (the same files the installer uses), so a
+    # new build folder works straight away.
+    set(_mysql_dir "${CMAKE_CURRENT_SOURCE_DIR}/installer/thirdparty")
+    if(EXISTS "${_mysql_dir}/sqldrivers/qsqlmysql.dll" AND EXISTS "${_mysql_dir}/libmysql.dll")
+        file(GLOB _mysql_dlls "${_mysql_dir}/*.dll")
+        foreach(_t WsprSked wsprplay wsprrx)
+            add_custom_command(TARGET ${_t} POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_FILE_DIR:${_t}>/sqldrivers"
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${_mysql_dir}/sqldrivers/qsqlmysql.dll" "$<TARGET_FILE_DIR:${_t}>/sqldrivers/"
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${_mysql_dlls} "$<TARGET_FILE_DIR:${_t}>/"
+                COMMENT "MySQL driver for ${_t}")
+        endforeach()
+    else()
+        message(WARNING "installer/thirdparty/sqldrivers/qsqlmysql.dll not found - copy the MySQL driver "
+                        "(sqldrivers/qsqlmysql.dll, libmysql.dll ...) next to the program yourself")
     endif()
 endif()
 

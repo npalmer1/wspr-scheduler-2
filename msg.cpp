@@ -47,6 +47,14 @@ public:
         return b;
     }
 
+protected:
+    void showEvent(QShowEvent *e) override
+    {
+        QDialog::showEvent(e);
+        raise();            // never left behind the main window, where a blocking box makes the program
+        activateWindow();   // look hung
+    }
+
 private:
     QHBoxLayout *m_buttons;
 };

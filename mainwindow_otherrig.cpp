@@ -29,6 +29,8 @@
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QSerialPortInfo>
+
+#include "rigctld.h"
 #include <QSignalBlocker>
 #include <QStatusBar>
 #include <cmath>
@@ -194,9 +196,8 @@ void MainWindow::setRigBoxes(bool serial)
         const QString keep = ui->rigportcomboBox->currentText();
         const QSignalBlocker b(ui->rigportcomboBox);
         ui->rigportcomboBox->clear();
-        for (const QSerialPortInfo &p : QSerialPortInfo::availablePorts())
-            ui->rigportcomboBox->addItem(p.portName());
-        if (!keep.isEmpty() && ui->rigportcomboBox->findText(keep) < 0)
+        ui->rigportcomboBox->addItems(Hamlib::serialPortNames());
+        if (!keep.isEmpty() && ui->rigportcomboBox->findText(keep) < 0 && !Hamlib::isPhantomSerialPort(keep))
             ui->rigportcomboBox->addItem(keep);
         ui->rigportcomboBox->setCurrentText(keep);
     }

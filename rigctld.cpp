@@ -4,15 +4,18 @@
 #include <QHostInfo>
 #include <QNetworkInterface>
 
+#include <algorithm>
 #include <cmath>
 
 #include "rigctl.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QStandardPaths>
+#include <QSerialPortInfo>
 
 qint64 correctedDialHz(qint64 wantedHz, double ppm)
 {
@@ -69,11 +72,52 @@ QString serialPortProblem(const QString &port)
     if (!fi.exists())
         return dev + " not found - is the rig's USB lead plugged in? (the ports are listed again when you "
                      "open the Rig control tab)";
+    if (isPhantomSerialPort(dev))
+        return dev + " is not a real serial port (this PC has no port there) - choose the rig's port "
+                     "(ttyUSB0, ttyACM0 ...) on the Rigctl rigs tab and Save";
     if (!fi.isReadable() || !fi.isWritable())
         return "No permission to use " + dev + ". Add yourself to the dialout group, then log out and in again:\n"
                "    sudo usermod -aG dialout $USER";
     return QString();
 #endif
+}
+
+bool isPhantomSerialPort(const QString &port)
+{
+#ifdef Q_OS_WIN
+    Q_UNUSED(port);
+    return false;
+#else
+    const QString name = QFileInfo(port.trimmed()).fileName();
+    if (!name.startsWith("ttyS"))
+        return false;
+    // the serial driver's port type: 0 = PORT_UNKNOWN, i.e. no UART at that address
+    QFile f("/sys/class/tty/" + name + "/type");
+    if (!f.open(QIODevice::ReadOnly))
+        return false;
+    return f.readAll().trimmed() == "0";
+#endif
+}
+
+QStringList serialPortNames()
+{
+    QStringList usb, other;
+    for (const QSerialPortInfo &p : QSerialPortInfo::availablePorts()) {
+        const QString n = p.portName();
+        if (isPhantomSerialPort(n))
+            continue;
+        (n.startsWith("ttyUSB") || n.startsWith("ttyACM") || p.hasVendorIdentifier() ? usb : other) << n;
+    }
+    auto natural = [](const QString &a, const QString &b) {   // ttyUSB2 before ttyUSB10, COM3 before COM10
+        static const QRegularExpression re("^(.*?)(\\d+)$");
+        const auto ma = re.match(a), mb = re.match(b);
+        if (ma.hasMatch() && mb.hasMatch() && ma.captured(1) == mb.captured(1))
+            return ma.captured(2).toInt() < mb.captured(2).toInt();
+        return a < b;
+    };
+    std::sort(usb.begin(), usb.end(), natural);
+    std::sort(other.begin(), other.end(), natural);
+    return usb + other;
 }
 
 int modelNumber(const QString &radio)

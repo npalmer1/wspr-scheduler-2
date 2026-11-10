@@ -9,8 +9,9 @@
 # It asks for your password (sudo) where it needs it, and:
 #   0. installs git if it isn't there, and gets the source: clones it into ~/wspr-scheduler-2, or if
 #      that's already there, pulls the latest version - then carries on with the newest copy of itself;
-#   1. installs what the program needs: Qt 6, the MySQL driver, Hamlib (rigctld), WSJT-X (wsprd),
-#      MySQL, fonts, the compiler and CMake;
+#   1. installs what the program needs: Qt 6, the MySQL driver, Hamlib (rigctld), wsprd (the WSPR
+#      decoder, unpacked on its own from Ubuntu's WSJT-X package - not all of WSJT-X),
+#      MariaDB (or keeps the MySQL already there), fonts, the compiler and CMake;
 #   2. builds WSPR Scheduler 2 and installs it in /usr/local (WsprSked, with a menu entry);
 #   3. lets your user use the rig's serial port and the sound card (dialout and audio groups);
 #   4. starts MySQL now and whenever the PC starts, adds the "admin" database user and, if they aren't
@@ -23,7 +24,8 @@
 # Options:
 #   --dir DIR      keep the source in DIR instead of ~/wspr-scheduler-2
 #   --no-update    don't clone or pull: build the source folder this script is in, as it is
-#   --no-wsjtx     don't install WSJT-X (no wsprd: no WSPR receiving)
+#   --full-wsjtx   install the whole of WSJT-X (the program too), not just its wsprd
+#   --no-wsjtx     no wsprd either (no WSPR receiving)
 #   --no-mysql     don't install or set up MySQL (the databases are on another PC)
 #   --uninstall    remove the program again (not the source, databases, settings or ~/WSPR_Sked)
 set -euo pipefail
@@ -32,7 +34,7 @@ REPO_URL="${WSPR_SKED_REPO:-https://github.com/npalmer1/wspr-scheduler-2.git}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREFIX=/usr/local
 DATADIR="$HOME/WSPR_Sked"
-WITH_WSJTX=1
+WSPRD=only        # only: just wsprd from the WSJT-X package; full: all of WSJT-X; none
 WITH_MYSQL=1
 UPDATE=1
 UNINSTALL=0
@@ -48,10 +50,11 @@ while [ $# -gt 0 ]; do
         --dir) [ $# -ge 2 ] || die "--dir needs a folder"; DEST="$2"; shift ;;
         --dir=*) DEST="${1#--dir=}" ;;
         --no-update) UPDATE=0 ;;
-        --no-wsjtx) WITH_WSJTX=0 ;;
+        --no-wsjtx|--no-wsprd) WSPRD=none ;;
+        --full-wsjtx) WSPRD=full ;;
         --no-mysql) WITH_MYSQL=0 ;;
         --uninstall) UNINSTALL=1 ;;
-        -h|--help) sed -n '2,31p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,/^set -e/{/^set -e/!p}' "$0"; exit 0 ;;
         *) die "Unknown option $1 (see --help)" ;;
     esac
     shift
@@ -74,6 +77,10 @@ if [ "$UNINSTALL" = 1 ]; then
     [ -f "$BUILD/install_manifest.txt" ] || die "Nothing to remove (no $BUILD/install_manifest.txt)."
     say "Removing WSPR Scheduler 2"
     xargs -d '\n' sudo rm -fv < "$BUILD/install_manifest.txt"
+    if [ -f "$BUILD/wsprd-installed" ]; then
+        xargs -d '\n' sudo rm -fv < "$BUILD/wsprd-installed"
+        rm -f "$BUILD/wsprd-installed"
+    fi
     sudo rmdir "$PREFIX/share/wspr-scheduler-2" 2>/dev/null || true
     ok "Removed. The source ($DEST), the databases, ~/WSPR_Sked and ~/DBcredential are still there."
     exit 0
@@ -119,7 +126,8 @@ if [ -z "${WSPR_SKED_BOOTSTRAPPED:-}" ] && [ "$UPDATE" = 1 ]; then
     # carry on with the newest copy of this script (it may have changed)
     export WSPR_SKED_BOOTSTRAPPED=1
     NEXT=(--dir "$DEST" --no-update)
-    [ "$WITH_WSJTX" = 0 ] && NEXT+=(--no-wsjtx)
+    [ "$WSPRD" = none ] && NEXT+=(--no-wsjtx)
+    [ "$WSPRD" = full ] && NEXT+=(--full-wsjtx)
     [ "$WITH_MYSQL" = 0 ] && NEXT+=(--no-mysql)
     exec bash "$DEST/linux/install.sh" "${NEXT[@]}"
 fi
@@ -131,17 +139,49 @@ cd "$SRC"
 
 # ---- 1. packages ----------------------------------------------------------------------------------
 say "Installing the packages WSPR Scheduler 2 needs (this can take a few minutes)"
+sudo apt-get update   # first, so the package lists below are up to date
 PKGS=(build-essential cmake git pkg-config
       qt6-base-dev qt6-tools-dev qt6-multimedia-dev qt6-serialport-dev libqt6sql6-mysql libxkbcommon-dev
       libhamlib-utils fonts-liberation openssl pulseaudio-utils)
-[ "$WITH_WSJTX" = 1 ] && PKGS+=(wsjtx)
+[ "$WSPRD" = full ] && PKGS+=(wsjtx)
+[ "$WSPRD" = only ] && PKGS+=(libfftw3-single3 libgfortran5)   # all that wsprd itself needs
 if [ "$WITH_MYSQL" = 1 ]; then
-    # keep MariaDB if that's what this PC has; otherwise MySQL, as Ubuntu suggests
-    if dpkg -s mariadb-server >/dev/null 2>&1; then PKGS+=(mariadb-server); else PKGS+=(mysql-server); fi
+    # keep whichever this PC already has; otherwise MariaDB - the same on Ubuntu, Debian and Raspberry Pi OS,
+    # and what XAMPP uses on Windows (WSPR Scheduler works with MySQL too)
+    mysql_state=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null || true)
+    case "$mysql_state" in
+        "install ok installed") PKGS+=(mysql-server) ;;
+        ""|"deinstall ok config-files"|"unknown ok not-installed") PKGS+=(mariadb-server) ;;
+        *) die "MySQL is half installed or half removed ($mysql_state), so the database can't be set up.
+   To remove it completely (this deletes any MySQL databases on this PC), then run this script again:
+     sudo dpkg --purge --force-all mysql-server mysql-server-8.0
+     sudo apt-get purge -y 'mysql-server*' 'mysql-client*' mysql-common
+     sudo apt-get --fix-broken install -y && sudo apt-get autoremove -y
+     sudo rm -rf /etc/mysql /var/lib/mysql" ;;
+    esac
 fi
-sudo apt-get update
 sudo apt-get install -y "${PKGS[@]}"
 ok "Packages installed"
+
+# wsprd on its own (as wsprd.exe on Windows): unpacked from this system's WSJT-X package, without
+# installing WSJT-X and the Qt 5 / Boost / ... it would bring with it
+if [ "$WSPRD" = only ]; then
+    if dpkg -s wsjtx >/dev/null 2>&1; then
+        ok "WSJT-X is installed: using its wsprd"
+    else
+        TMP="$(mktemp -d)"
+        if (cd "$TMP" && apt-get download wsjtx >/dev/null 2>&1) \
+           && dpkg-deb --fsys-tarfile "$TMP"/wsjtx_*.deb | tar -x -C "$TMP" ./usr/bin/wsprd; then
+            sudo install -m 755 "$TMP/usr/bin/wsprd" "$PREFIX/bin/wsprd"
+            mkdir -p "$BUILD"
+            echo "$PREFIX/bin/wsprd" > "$BUILD/wsprd-installed"
+            ok "wsprd installed in $PREFIX/bin (from the WSJT-X package, without the rest of WSJT-X)"
+        else
+            warn "couldn't get wsprd from the WSJT-X package - run again with --full-wsjtx"
+        fi
+        rm -rf "$TMP"
+    fi
+fi
 
 # ---- 2. build and install -------------------------------------------------------------------------
 say "Building WSPR Scheduler 2"
@@ -242,7 +282,9 @@ if command -v timedatectl >/dev/null; then
     sudo timedatectl set-ntp true 2>/dev/null && ok "network time on (WSPR needs the clock within a second)" \
         || warn "couldn't turn on network time - check the clock with: timedatectl"
 fi
-[ "$WITH_WSJTX" = 1 ] && { command -v wsprd >/dev/null && ok "wsprd: $(command -v wsprd)" || warn "wsprd not found - receiving won't decode"; }
+if [ "$WSPRD" != none ]; then
+    if command -v wsprd >/dev/null; then ok "wsprd: $(command -v wsprd)"; else warn "wsprd not found - receiving won't decode"; fi
+fi
 command -v rigctld >/dev/null && ok "rigctld: $(command -v rigctld)"
 
 say "Done"

@@ -76,7 +76,7 @@ int main(int argc, char **argv)
         CHECK(m.startsWith("MySQL doesn't seem to be installed") && m.contains("wspr_mysql_setup.exe") && m.contains("XAMPP")
               && m.endsWith("please restart WSPR Scheduler."));
 #else
-        CHECK(m.startsWith("MySQL doesn't seem to be installed") && m.contains("sudo apt install mysql-server")
+        CHECK(m.startsWith("MySQL doesn't seem to be installed") && m.contains("sudo apt install mariadb-server")
               && !m.contains("XAMPP") && m.endsWith("please restart WSPR Scheduler."));
 #endif
     }
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
         CHECK(m.startsWith("MySQL was found (the Windows service MySQL80) but could not be started automatically.")
               && m.contains("administrator rights") && m.contains("port 3306"));
 #ifndef Q_OS_WIN
-        CHECK(m.contains("sudo systemctl enable --now mysql"));
+        CHECK(m.contains("sudo systemctl enable --now mariadb"));
 #endif
     }
 
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
         // no mysql / mariadb service at all
         script("systemctl", "echo not-found");
         r = ensureRunning("127.0.0.1", freePort(), 2);
-        CHECK(r.outcome == Outcome::NotInstalled && message(r, "WSPR Scheduler").contains("sudo apt install mysql-server"));
+        CHECK(r.outcome == Outcome::NotInstalled && message(r, "WSPR Scheduler").contains("sudo apt install mariadb-server"));
         qputenv("PATH", oldPath);
     }
 #endif

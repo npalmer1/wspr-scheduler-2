@@ -184,8 +184,8 @@ void MainWindow::testRigConnection()
         if (local && !c.answered) {
             const QString com = m_rigCfg.comPort.trimmed();
             bool comFound = com.isEmpty();
-            for (const QSerialPortInfo &p : QSerialPortInfo::availablePorts())
-                if (p.portName().compare(com, Qt::CaseInsensitive) == 0)
+            for (const QString &p : Hamlib::serialPortNames())
+                if (p.compare(com, Qt::CaseInsensitive) == 0)
                     comFound = true;
             if (!comFound)
                 lines << QString("\nThe saved COM port %1 isn't on this PC now - pick the radio's port from the list.").arg(com);

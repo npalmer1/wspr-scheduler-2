@@ -51,7 +51,7 @@ wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/inst
 bash install.sh
 ```
 
-It gets the source (clones it into ~/wspr-scheduler-2, or pulls the latest), installs everything needed (Qt 6, Hamlib, WSJT-X's wsprd, MySQL), builds and installs the program
+It gets the source (clones it into ~/wspr-scheduler-2, or pulls the latest), installs everything needed (Qt 6, Hamlib, WSJT-X's wsprd, MariaDB), builds and installs the program
 with a menu entry, gives your user access to the serial port and sound card, and sets up the database
 user and, if they aren't there yet, the databases. See [linux/README.md](linux/README.md).
 
