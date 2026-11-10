@@ -44,13 +44,14 @@ Tests need a scratch database, never the real one. Configure with `-DWSPRSKED_TE
 ## Linux
 
 WSPR Scheduler 2 runs on Linux too (Ubuntu 24.04 tested; Debian and Raspberry Pi OS should work).
-To install, from this folder:
+To install, download the install script and run it:
 
 ```
-bash linux/install.sh
+wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/install.sh
+bash install.sh
 ```
 
-It installs everything needed (Qt 6, Hamlib, WSJT-X's wsprd, MySQL), builds and installs the program
+It gets the source (clones it into ~/wspr-scheduler-2, or pulls the latest), installs everything needed (Qt 6, Hamlib, WSJT-X's wsprd, MySQL), builds and installs the program
 with a menu entry, gives your user access to the serial port and sound card, and sets up the database
 user and, if they aren't there yet, the databases. See [linux/README.md](linux/README.md).
 

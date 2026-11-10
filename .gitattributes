@@ -2,3 +2,6 @@
 *.bat text eol=crlf
 *.iss text eol=crlf
 installer/requirements.txt text eol=crlf
+# Linux scripts keep Linux line endings (bash fails on \r)
+*.sh text eol=lf
+*.desktop text eol=lf

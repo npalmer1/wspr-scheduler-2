@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# WSPR Scheduler 2 - install on Ubuntu / Debian / Raspberry Pi OS (from this source folder).
+# WSPR Scheduler 2 - install or update on Ubuntu / Debian / Raspberry Pi OS.
 #
-#   cd wspr-scheduler-2          (the folder downloaded from GitHub)
-#   bash linux/install.sh
+# Just this script is enough - download it and run it:
+#   wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/install.sh
+#   bash install.sh
+# (or, in a folder already cloned from GitHub:  bash linux/install.sh)
 #
 # It asks for your password (sudo) where it needs it, and:
+#   0. installs git if it isn't there, and gets the source: clones it into ~/wspr-scheduler-2, or if
+#      that's already there, pulls the latest version - then carries on with the newest copy of itself;
 #   1. installs what the program needs: Qt 6, the MySQL driver, Hamlib (rigctld), WSJT-X (wsprd),
 #      MySQL, fonts, the compiler and CMake;
 #   2. builds WSPR Scheduler 2 and installs it in /usr/local (WsprSked, with a menu entry);
@@ -13,50 +17,117 @@
 #      there yet, the WSPR Scheduler databases (from wspr_db.sql) - existing databases are never touched;
 #   5. makes ~/WSPR_Sked (wsprd's files, the help file) and turns on the network time service.
 #
-# Run it again after "git pull" (or a new download) to update: it only rebuilds and reinstalls the
-# program, and never changes the databases or settings that are already there.
+# Run it again to update: it pulls the latest version, rebuilds and reinstalls the program, and never
+# changes the databases or settings that are already there.
 #
 # Options:
+#   --dir DIR      keep the source in DIR instead of ~/wspr-scheduler-2
+#   --no-update    don't clone or pull: build the source folder this script is in, as it is
 #   --no-wsjtx     don't install WSJT-X (no wsprd: no WSPR receiving)
 #   --no-mysql     don't install or set up MySQL (the databases are on another PC)
-#   --uninstall    remove the program again (not the databases, settings or ~/WSPR_Sked)
+#   --uninstall    remove the program again (not the source, databases, settings or ~/WSPR_Sked)
 set -euo pipefail
 
+REPO_URL="${WSPR_SKED_REPO:-https://github.com/npalmer1/wspr-scheduler-2.git}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$(cd "$HERE/.." && pwd)"
-BUILD="$SRC/build-linux-release"
 PREFIX=/usr/local
 DATADIR="$HOME/WSPR_Sked"
 WITH_WSJTX=1
 WITH_MYSQL=1
+UPDATE=1
+UNINSTALL=0
+DEST=""
 
 say()  { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 ok()   { printf '\033[0;32m   %s\033[0m\n' "$*"; }
 warn() { printf '\033[0;33m   ! %s\033[0m\n' "$*"; }
 die()  { printf '\033[0;31m   %s\033[0m\n' "$*" >&2; exit 1; }
 
-for a in "$@"; do
-    case "$a" in
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --dir) [ $# -ge 2 ] || die "--dir needs a folder"; DEST="$2"; shift ;;
+        --dir=*) DEST="${1#--dir=}" ;;
+        --no-update) UPDATE=0 ;;
         --no-wsjtx) WITH_WSJTX=0 ;;
         --no-mysql) WITH_MYSQL=0 ;;
-        --uninstall)
-            if [ -f "$BUILD/install_manifest.txt" ]; then
-                say "Removing WSPR Scheduler 2"
-                xargs -d '\n' sudo rm -fv < "$BUILD/install_manifest.txt"
-                sudo rmdir "$PREFIX/share/wspr-scheduler-2" 2>/dev/null || true
-                ok "Removed. The databases, ~/WSPR_Sked and ~/DBcredential are still there."
-            else
-                die "Nothing to remove (no $BUILD/install_manifest.txt)."
-            fi
-            exit 0 ;;
-        -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
-        *) die "Unknown option $a (see --help)" ;;
+        --uninstall) UNINSTALL=1 ;;
+        -h|--help) sed -n '2,31p' "$0"; exit 0 ;;
+        *) die "Unknown option $1 (see --help)" ;;
     esac
+    shift
 done
 
 [ "$(id -u)" -ne 0 ] || die "Run this as your normal user, not with sudo: it asks for the password itself."
 command -v apt-get >/dev/null || die "This script is for Ubuntu / Debian / Raspberry Pi OS (apt). See linux/README.md."
-[ -f "$SRC/CMakeLists.txt" ] || die "Run it from the WSPR Scheduler 2 source folder (bash linux/install.sh)."
+
+# Where the source is: the folder this script is in, if it's a copy of WSPR Scheduler 2 (cloned or
+# unpacked from a ZIP); otherwise --dir, or ~/wspr-scheduler-2
+INSIDE=""
+[ -f "$HERE/../CMakeLists.txt" ] && grep -q "WsprSked" "$HERE/../CMakeLists.txt" && INSIDE="$(cd "$HERE/.." && pwd)"
+if [ -z "$DEST" ]; then
+    DEST="${INSIDE:-$HOME/wspr-scheduler-2}"
+fi
+DEST="$(mkdir -p "$(dirname "$DEST")" && cd "$(dirname "$DEST")" && pwd)/$(basename "$DEST")"
+
+if [ "$UNINSTALL" = 1 ]; then
+    BUILD="$DEST/build-linux-release"
+    [ -f "$BUILD/install_manifest.txt" ] || die "Nothing to remove (no $BUILD/install_manifest.txt)."
+    say "Removing WSPR Scheduler 2"
+    xargs -d '\n' sudo rm -fv < "$BUILD/install_manifest.txt"
+    sudo rmdir "$PREFIX/share/wspr-scheduler-2" 2>/dev/null || true
+    ok "Removed. The source ($DEST), the databases, ~/WSPR_Sked and ~/DBcredential are still there."
+    exit 0
+fi
+
+# ---- 0. the source: git, then clone or pull ---------------------------------------------------------
+if [ -z "${WSPR_SKED_BOOTSTRAPPED:-}" ] && [ "$UPDATE" = 1 ]; then
+    say "Getting the latest WSPR Scheduler 2"
+    if command -v git >/dev/null; then
+        ok "git is installed"
+    else
+        sudo apt-get update
+        sudo apt-get install -y git
+        ok "git installed"
+    fi
+    clone() {
+        if ! git clone "$REPO_URL" "$DEST"; then
+            die "Couldn't download $REPO_URL - check the internet connection (and that the repository is public)."
+        fi
+        ok "Downloaded into $DEST"
+    }
+    if [ -d "$DEST/.git" ]; then
+        cd "$DEST"
+        if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            warn "$DEST has changes of your own, so it wasn't updated:"
+            git status --short --untracked-files=no | sed 's/^/     /'
+            die "Keep them with 'git stash' (or 'git commit'), or throw them away with 'git checkout .', then run this again - or use --no-update to build it as it is."
+        fi
+        before="$(git rev-parse HEAD)"
+        git pull --ff-only || die "git pull failed - see above. Or use --no-update to build the copy you have."
+        if [ "$(git rev-parse HEAD)" = "$before" ]; then ok "$DEST is already the latest version"
+        else ok "$DEST updated to the latest version"; fi
+    elif [ -e "$DEST" ] && [ -n "$(ls -A "$DEST" 2>/dev/null)" ]; then
+        # e.g. unpacked from a ZIP: keep it, but under another name, and clone a proper copy
+        OLD="$DEST.old-$(date +%Y%m%d-%H%M%S)"
+        mv "$DEST" "$OLD"
+        warn "$DEST wasn't a git copy: moved it to $OLD"
+        clone
+    else
+        rmdir "$DEST" 2>/dev/null || true
+        clone
+    fi
+    # carry on with the newest copy of this script (it may have changed)
+    export WSPR_SKED_BOOTSTRAPPED=1
+    NEXT=(--dir "$DEST" --no-update)
+    [ "$WITH_WSJTX" = 0 ] && NEXT+=(--no-wsjtx)
+    [ "$WITH_MYSQL" = 0 ] && NEXT+=(--no-mysql)
+    exec bash "$DEST/linux/install.sh" "${NEXT[@]}"
+fi
+
+SRC="$DEST"
+[ -f "$SRC/CMakeLists.txt" ] || die "No WSPR Scheduler 2 source in $SRC."
+BUILD="$SRC/build-linux-release"
+cd "$SRC"
 
 # ---- 1. packages ----------------------------------------------------------------------------------
 say "Installing the packages WSPR Scheduler 2 needs (this can take a few minutes)"
