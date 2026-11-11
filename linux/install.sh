@@ -54,6 +54,14 @@ apt_get() {
         if sudo apt-get -o DPkg::Lock::Timeout=600 "$@" 2>&1 | tee "$log"; [ "${PIPESTATUS[0]}" -eq 0 ]; then
             rm -f "$log"; return 0
         fi
+        # "apt-get update" whose only error is the install DVD still listed as a package source (Debian
+        # installed from DVD/USB): the internet sources were read, so carry on
+        if [ "$1" = update ] && grep -q "cdrom:" "$log" \
+           && ! grep -E "^(E|Err|Error):" "$log" | grep -q -v "cdrom:"; then
+            warn "The install DVD is still listed as a package source - ignored. To stop the message, comment out"
+            warn "the 'cdrom:' line in /etc/apt/sources.list (or add 'Enabled: no' to it in /etc/apt/sources.list.d/)"
+            rm -f "$log"; return 0
+        fi
         if grep -q -E "Could not get lock|Unable to lock" "$log" && [ $((tries += 1)) -le 60 ]; then
             [ "$tries" = 1 ] && warn "apt is busy (the system's own software update?) - waiting for it to finish..."
             sleep 10
