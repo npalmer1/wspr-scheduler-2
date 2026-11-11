@@ -45,6 +45,24 @@ ok()   { printf '\033[0;32m   %s\033[0m\n' "$*"; }
 warn() { printf '\033[0;33m   ! %s\033[0m\n' "$*"; }
 die()  { printf '\033[0;31m   %s\033[0m\n' "$*" >&2; exit 1; }
 
+# sudo apt-get ..., waiting (up to 10 minutes) if apt is busy - e.g. a fresh Debian / Raspberry Pi OS
+# install runs its own software update in the background (packagekitd) as soon as the network is up
+apt_get() {
+    local log tries=0
+    log=$(mktemp)
+    while :; do
+        if sudo apt-get -o DPkg::Lock::Timeout=600 "$@" 2>&1 | tee "$log"; [ "${PIPESTATUS[0]}" -eq 0 ]; then
+            rm -f "$log"; return 0
+        fi
+        if grep -q -E "Could not get lock|Unable to lock" "$log" && [ $((tries += 1)) -le 60 ]; then
+            [ "$tries" = 1 ] && warn "apt is busy (the system's own software update?) - waiting for it to finish..."
+            sleep 10
+            continue
+        fi
+        rm -f "$log"; return 1
+    done
+}
+
 while [ $# -gt 0 ]; do
     case "$1" in
         --dir) [ $# -ge 2 ] || die "--dir needs a folder"; DEST="$2"; shift ;;
@@ -92,8 +110,8 @@ if [ -z "${WSPR_SKED_BOOTSTRAPPED:-}" ] && [ "$UPDATE" = 1 ]; then
     if command -v git >/dev/null; then
         ok "git is installed"
     else
-        sudo apt-get update
-        sudo apt-get install -y git
+        apt_get update
+        apt_get install -y git
         ok "git installed"
     fi
     clone() {
@@ -139,7 +157,7 @@ cd "$SRC"
 
 # ---- 1. packages ----------------------------------------------------------------------------------
 say "Installing the packages WSPR Scheduler 2 needs (this can take a few minutes)"
-sudo apt-get update   # first, so the package lists below are up to date
+apt_get update   # first, so the package lists below are up to date
 PKGS=(build-essential cmake git pkg-config
       qt6-base-dev qt6-tools-dev qt6-multimedia-dev qt6-serialport-dev libqt6sql6-mysql libxkbcommon-dev
       libhamlib-utils fonts-liberation openssl pulseaudio-utils)
@@ -160,7 +178,7 @@ if [ "$WITH_MYSQL" = 1 ]; then
      sudo rm -rf /etc/mysql /var/lib/mysql" ;;
     esac
 fi
-sudo apt-get install -y "${PKGS[@]}"
+apt_get install -y "${PKGS[@]}"
 ok "Packages installed"
 
 # wsprd on its own (as wsprd.exe on Windows): unpacked from this system's WSJT-X package, without
