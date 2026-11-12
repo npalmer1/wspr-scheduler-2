@@ -45,6 +45,31 @@ ok()   { printf '\033[0;32m   %s\033[0m\n' "$*"; }
 warn() { printf '\033[0;33m   ! %s\033[0m\n' "$*"; }
 die()  { printf '\033[0;31m   %s\033[0m\n' "$*" >&2; exit 1; }
 
+# Debian installed from a DVD / USB stick keeps that disc as a package source, and apt then stops at
+# "Media change: please insert the disc ..." - hidden in this script's output, so it just looks hung.
+# Turn those entries off (a copy of each file changed goes in /var/backups).
+APT_ETC="${APT_ETC:-/etc/apt}"   # (tests point this elsewhere)
+disable_cdrom_sources() {
+    local f changed=0
+    for f in "$APT_ETC/sources.list" "$APT_ETC"/sources.list.d/*.list; do
+        [ -f "$f" ] && grep -q -E '^[[:space:]]*deb(-src)?[[:space:]].*cdrom:' "$f" || continue
+        sudo cp "$f" "/var/backups/$(basename "$f").before-wspr"
+        sudo sed -i -E 's/^([[:space:]]*deb(-src)?[[:space:]].*cdrom:)/# \1/' "$f"
+        changed=1
+    done
+    for f in "$APT_ETC"/sources.list.d/*.sources; do
+        [ -f "$f" ] && grep -q -E '^URIs:.*cdrom:' "$f" || continue
+        grep -q -E '^Enabled:[[:space:]]*no' "$f" && continue
+        sudo cp "$f" "/var/backups/$(basename "$f").before-wspr"
+        sudo sed -i -E '/^URIs:.*cdrom:/a Enabled: no' "$f"
+        changed=1
+    done
+    if [ "$changed" = 1 ]; then
+        ok "Turned off the install DVD as a package source (packages now come from the internet)"
+    fi
+    return 0
+}
+
 # sudo apt-get ..., waiting (up to 10 minutes) if apt is busy - e.g. a fresh Debian / Raspberry Pi OS
 # install runs its own software update in the background (packagekitd) as soon as the network is up
 apt_get() {
@@ -118,6 +143,7 @@ if [ -z "${WSPR_SKED_BOOTSTRAPPED:-}" ] && [ "$UPDATE" = 1 ]; then
     if command -v git >/dev/null; then
         ok "git is installed"
     else
+        disable_cdrom_sources
         apt_get update
         apt_get install -y git
         ok "git installed"
@@ -165,6 +191,7 @@ cd "$SRC"
 
 # ---- 1. packages ----------------------------------------------------------------------------------
 say "Installing the packages WSPR Scheduler 2 needs (this can take a few minutes)"
+disable_cdrom_sources
 apt_get update   # first, so the package lists below are up to date
 PKGS=(build-essential cmake git pkg-config
       qt6-base-dev qt6-tools-dev qt6-multimedia-dev qt6-serialport-dev libqt6sql6-mysql libxkbcommon-dev

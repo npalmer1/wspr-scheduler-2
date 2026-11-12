@@ -17,3 +17,4 @@ installer/thirdparty/
 zips/
 DEPLOY_WINDOWS.md
 PORTING_NOTES.md
+conversion_report.txt
