@@ -10,7 +10,6 @@ CMakeSettings.json
 *.wav
 remote.pfx
 remote.ini
-# installer: made by installer\make_release.bat / your own MySQL files
 installer/stage/
 installer/output/
 installer/thirdparty/
