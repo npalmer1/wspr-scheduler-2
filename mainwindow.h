@@ -186,6 +186,8 @@ private slots:
     void SaveAudiobutton_Click();
     void button5_Click();
     void Monitorbutton_Click();
+    void startLevelMonitor(bool announce);
+    static int meterPosition(float amplitude);   // 0..1000 on the level bar, dB scale as C#   // level bar on the RX & Sound tab (C#: MonitorMic)
     void audioUpdatebutton_Click();
     void audioOutlistBox_SelectedIndexChanged(int row);
     void audioInlistBox_SelectedIndexChanged(int row);

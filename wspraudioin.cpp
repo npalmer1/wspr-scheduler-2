@@ -282,8 +282,16 @@ bool InputLevelMonitor::start(const QString &deviceName)
             }
             peak = qMax(peak, std::fabs(v) * m_gain);
         }
-        emit level(qMin(1.0f, peak));
+        // Linux delivers audio in chunks of a few ms: one reading per chunk made the bar jump about
+        m_windowPeak = qMax(m_windowPeak, peak);
+        if (m_window.elapsed() >= 100) {
+            emit level(qMin(1.0f, m_windowPeak));
+            m_windowPeak = 0.0f;
+            m_window.restart();
+        }
     });
+    m_windowPeak = 0.0f;
+    m_window.start();
     return true;
 }
 

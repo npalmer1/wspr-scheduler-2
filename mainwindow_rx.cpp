@@ -2,6 +2,8 @@
 // the clock / start-of-cycle calls from daytimer_Action, and the "stop RX" checkbox.
 // and the RX & Sound tab (device lists, gain slider and level meter, wsprd folder, Save_Audio).
 #include "mainwindow.h"
+#include <QStandardPaths>
+#include <QStatusBar>
 #include "ui_mainwindow.h"
 
 #include "msg.h"
@@ -17,6 +19,8 @@
 #include <QRegularExpression>
 
 #include "version.h"
+
+#include <cmath>
 
 QString MainWindow::rxCallsign() const
 {
@@ -43,12 +47,14 @@ void MainWindow::setupReceiver()
         ui->samecheckBox->setChecked(rs->sameDevice);
     }
 #ifndef Q_OS_WIN
-    // a Windows path from a database copied from Windows means nothing here; Ubuntu's wsjtx package puts
-    // wsprd in /usr/bin
+    // a Windows path from a database copied from Windows means nothing here
     if (QRegularExpression("^[A-Za-z]:[\\\\/]").match(m_wsprdPath).hasMatch())
         m_wsprdPath.clear();
-    if (m_wsprdPath.isEmpty() && QFileInfo::exists("/usr/bin/wsprd"))
-        m_wsprdPath = "/usr/bin";
+    if (m_wsprdPath.isEmpty()) {   // wherever wsprd is: /usr/local/bin (install.sh), /usr/bin (WSJT-X) ...
+        const QString found = QStandardPaths::findExecutable("wsprd");
+        if (!found.isEmpty())
+            m_wsprdPath = QFileInfo(found).absolutePath();
+    }
 #endif
     if (m_wsprdPath.isEmpty())
         m_wsprdPath = Rx::defaultDataDir();   // C#: root + "WSPR_Sked"
@@ -65,7 +71,7 @@ void MainWindow::setupReceiver()
     }
     ui->gainlabel->setText(QString::number(m_gain));
     ui->gainlabel->adjustSize();
-    ui->volumeMeter1->setRange(0, 100);
+    ui->volumeMeter1->setRange(0, 1000);
     findSound();
     matchAudioList();
 
@@ -73,6 +79,35 @@ void MainWindow::setupReceiver()
     m_rx->setHeader(rxCallsign(), db, ui->LocatortextBox->text(), m_audioInName, m_wsprdPath, WSPRSKED_VERSION);
     // dial frequency: from rigctld when it answers (getRigF), else the default frequency
     m_rx->setFrequency(m_dialMHz.isEmpty() ? QString::number(m_cfg.defaultF, 'f', 6) : m_dialMHz);
+
+    // C#: Form1_Load called MonitorMic, so the level bar was live from the start (Monitor mic/line
+    // restarts it, Stop stops it)
+    startLevelMonitor(false);
+}
+
+// The C# meter was NAudio's VolumeMeter with MinDb -60 and MaxDb 18: the bar shows the level in dB, so
+// it moves steadily rather than with every peak. Full scale (0 dB) is 60/78 of the way up, as there.
+int MainWindow::meterPosition(float amplitude)
+{
+    constexpr double minDb = -60.0, maxDb = 18.0;
+    const double db = amplitude > 0.0f ? 20.0 * std::log10(double(amplitude)) : minDb;
+    return int(1000.0 * (qBound(minDb, db, maxDb) - minDb) / (maxDb - minDb));
+}
+
+void MainWindow::startLevelMonitor(bool announce)
+{
+    if (!m_levelMon) {
+        m_levelMon = new InputLevelMonitor(this);
+        connect(m_levelMon, &InputLevelMonitor::level, this,
+                [this](float peak) { ui->volumeMeter1->setValue(meterPosition(peak)); });
+    }
+    m_levelMon->setGain(m_gain);
+    if (!m_levelMon->start(m_audioInName)) {
+        if (announce)
+            Msg::timed(this, m_levelMon->lastError(), "RX audio", 2500);
+        else
+            statusBar()->showMessage("Input level: " + m_levelMon->lastError(), 10000);
+    }
 }
 
 void MainWindow::showReceiver()
@@ -144,6 +179,23 @@ void MainWindow::findSound()
     ui->audioInlistBox->clear();
     ui->audioOutlistBox->addItems(WsprAudioOut::outputDeviceNames());
     ui->audioInlistBox->addItems(WsprAudioIn::inputDeviceNames());
+#ifndef Q_OS_WIN
+    // Qt gets the devices from the sound server (PulseAudio, or PipeWire's pulse layer): none at all
+    // usually means it isn't running, or the card's profile is "off" - say so instead of empty lists
+    if (ui->audioOutlistBox->count() == 0 && ui->audioInlistBox->count() == 0) {
+        const QString tip = "Qt lists the sound devices that PulseAudio / PipeWire offers. Check in a terminal:\n"
+                            "  pactl info            (is the sound server running?)\n"
+                            "  pactl list short cards / sinks / sources\n"
+                            "If pactl isn't there:  sudo apt install pipewire-pulse pulseaudio-utils\n"
+                            "If the card's profile is off: Settings > Sound, or plug in the rig's USB sound interface.";
+        for (QListWidget *l : {ui->audioOutlistBox, ui->audioInlistBox}) {
+            auto *item = new QListWidgetItem("No sound devices found - hover here", l);
+            item->setFlags(Qt::NoItemFlags);   // not a device: can't be chosen
+            item->setToolTip(tip);
+        }
+        statusBar()->showMessage("No sound devices found: is PulseAudio / PipeWire running? (pactl info)", 15000);
+    }
+#endif
 }
 
 // C#: match_audio_list
@@ -224,14 +276,7 @@ void MainWindow::trackBarGain_ValueChanged(int value)
 // C#: Monitorbutton - level meter for the selected input
 void MainWindow::Monitorbutton_Click()
 {
-    if (!m_levelMon) {
-        m_levelMon = new InputLevelMonitor(this);
-        connect(m_levelMon, &InputLevelMonitor::level, this,
-                [this](float peak) { ui->volumeMeter1->setValue(int(peak * 100)); });
-    }
-    m_levelMon->setGain(m_gain);
-    if (!m_levelMon->start(m_audioInName))
-        Msg::timed(this, m_levelMon->lastError(), "RX audio", 2500);
+    startLevelMonitor(true);
 }
 
 // C#: button5 ("Stop")

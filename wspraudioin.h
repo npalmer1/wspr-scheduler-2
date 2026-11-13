@@ -15,6 +15,7 @@
 //    to 31 characters by Windows' old API) still match.
 #include <QAudioDevice>
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -92,11 +93,14 @@ public:
     QString lastError() const { return m_error; }
 
 signals:
-    void level(float peak);                   // 0..1 after gain, about 10 times a second
+    void level(float peak);                   // 0..1 after gain: the loudest point of each 100 ms
+                                              // (C#: NAudio WaveInEvent's 100 ms buffers)
 
 private:
     std::unique_ptr<QAudioSource> m_source;
     QIODevice *m_io = nullptr;
     float m_gain = 1.0f;
+    float m_windowPeak = 0.0f;   // loudest so far in the current 100 ms
+    QElapsedTimer m_window;
     QString m_error;
 };
