@@ -25,7 +25,7 @@ QChar fromCodePage(int b, bool symbolFont)
     return QChar(b);
 }
 
-enum class Dest { Normal, Skip, FontTable, ColorTable, Pict, FieldInst };
+enum class Dest { Normal, Skip, FontTable, ColorTable, Pict, FieldInst, Shape };   // Shape: \*\shpinst
 
 struct CharFmt
 {
@@ -169,6 +169,8 @@ void Converter::text(QChar c)
     case Dest::FieldInst:
         m_fieldInst += c;
         return;
+    case Dest::Shape:   // the shape's settings ({\sn shapeType}{\sv 75}...) aren't text
+        return;
     case Dest::Normal:
         break;
     }
@@ -256,7 +258,7 @@ void Converter::groupEnd(const State &closing)
                 w = w * closing.scalex / 100;
                 h = h * closing.scaley / 100;
                 const QString name = QString("rtfimage%1").arg(m_images.size() + 1);
-                m_images << Rtf::Image{name, img};
+                m_images << Rtf::Image{name, img, QSize(w, h)};
                 flushRun();
                 m_para += QString("<img src=\"%1\" width=\"%2\" height=\"%3\">").arg(name).arg(w).arg(h);
             }
@@ -271,6 +273,10 @@ void Converter::controlWord(const QString &w, bool hasArg, int arg)
     if (m_starred) {
         m_starred = false;
         if (w == "shppict") return;   // Word's picture (the \nonshppict copy is skipped)
+        if (w == "shpinst") {          // a floating picture (text wrapping on): {\sp{\sn pib}{\sv {\pict ...}}}
+            s.dest = Dest::Shape;      // only its \pict is used (the \shprslt copy is skipped)
+            return;
+        }
         if (w == "fldinst") {
             s.dest = Dest::FieldInst;
             m_fieldInst.clear();
@@ -284,7 +290,7 @@ void Converter::controlWord(const QString &w, bool hasArg, int arg)
 
     // destinations
     static const QStringList skip = {"stylesheet", "info", "header", "headerl", "headerr", "headerf", "footer",
-                                     "footerl", "footerr", "footerf", "footnote", "nonshppict", "object", "listtable",
+                                     "footerl", "footerr", "footerf", "footnote", "nonshppict", "shprslt", "object", "listtable",
                                      "listoverridetable", "rsidtbl", "revtbl", "xmlnstbl", "filetbl", "pgdsctbl",
                                      "themedata", "colorschememapping", "datastore", "latentstyles", "mmathPr",
                                      "generator", "userprops", "docvar", "bkmkstart", "bkmkend", "pn", "annotation",
@@ -332,6 +338,7 @@ void Converter::controlWord(const QString &w, bool hasArg, int arg)
         return;
     case Dest::FieldInst:
     case Dest::Skip:
+    case Dest::Shape:
         return;
     case Dest::Normal:
         break;
@@ -488,3 +495,15 @@ Html toHtml(const QByteArray &rtf)
     return Converter(rtf).run();
 }
 } // namespace Rtf
+
+QImage Rtf::Image::forDisplay(qreal dpr) const
+{
+    if (image.isNull() || !shown.isValid() || shown.isEmpty())
+        return image;
+    const QSize px = (QSizeF(shown) * qMax<qreal>(1.0, dpr)).toSize();
+    if (px.width() >= image.width() && px.height() >= image.height())
+        return image;   // not shrunk: nothing to smooth
+    QImage out = image.scaled(px, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    out.setDevicePixelRatio(qMax<qreal>(1.0, dpr));
+    return out;
+}

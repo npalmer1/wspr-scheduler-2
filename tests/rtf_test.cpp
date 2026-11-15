@@ -46,7 +46,24 @@ int main(int argc, char **argv)
     const Rtf::Html p = Rtf::toHtml("{\\rtf1 x{\\*\\shppict{\\pict\\pngblip\\picwgoal300\\pichgoal150 " + png.toHex()
                                     + "}}{\\nonshppict{\\pict\\wmetafile8 0102}}y\\par}");
     CHECK(p.images.size() == 1 && !p.images[0].image.isNull());
+    // shrunk smoothly to the size it is shown at (and at twice that on a 2x screen); never enlarged
+    {
+        Rtf::Image big{"x", QImage(400, 200, QImage::Format_RGB32), QSize(100, 50)};
+        big.image.fill(Qt::white);
+        CHECK(big.forDisplay(1.0).size() == QSize(100, 50) && big.forDisplay(2.0).size() == QSize(200, 100)
+              && big.forDisplay(2.0).devicePixelRatio() == 2.0);
+        Rtf::Image small{"y", QImage(50, 25, QImage::Format_RGB32), QSize(100, 50)};
+        CHECK(small.forDisplay(1.0).size() == QSize(50, 25));
+    }
     CHECK(p.html.contains("<img src=\"rtfimage1\" width=\"20\" height=\"10\">") && p.html.contains("x<img") && !p.html.contains("0102"));
+    // a floating picture (Word: text wrapping on - a shape, often inside a SHAPE field); its settings
+    // aren't text, and the \shprslt copy isn't shown twice
+    const Rtf::Html sp = Rtf::toHtml(
+        "{\\rtf1 a{\\field{\\*\\fldinst{SHAPE \\\\* MERGEFORMAT}}{\\fldrslt{{\\shp{\\*\\shpinst\\shpleft0\\shpright2115"
+        "{\\sp{\\sn shapeType}{\\sv 75}}{\\sp{\\sn pib}{\\sv {\\pict\\picscalex50\\picscaley50\\pngblip\\picwgoal600\\pichgoal300 "
+        + png.toHex() + "}}}}{\\shprslt{\\*\\do\\dobxcolumn{\\pict\\pngblip " + png.toHex() + "}}}}}}}b\\par}");
+    CHECK(sp.images.size() == 1 && sp.html.contains("<img src=\"rtfimage1\" width=\"20\" height=\"10\">"));
+    CHECK(!sp.html.contains("shapeType") && !sp.html.contains("75") && !sp.html.contains("MERGEFORMAT"));
     // sub/superscript, Word style and LibreOffice style
     h = html("{\\rtf1 H{\\sub 2}O x{\\up6 2} y{\\dn4 3}\\par}");
     CHECK(h.count("vertical-align:sub") == 2 && h.count("vertical-align:super") == 1);

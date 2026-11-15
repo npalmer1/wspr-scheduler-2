@@ -95,8 +95,8 @@ void MainWindow::showHelp()
             Msg::timed(this, QDir::toNativeSeparators(file) + " is not an RTF file", "Help file", 3000);
             return;
         }
-        for (const Rtf::Image &img : h.images)
-            doc->addResource(QTextDocument::ImageResource, QUrl(img.name), img.image);
+        for (const Rtf::Image &img : h.images)   // shrunk smoothly (see rtfhtml.h)
+            doc->addResource(QTextDocument::ImageResource, QUrl(img.name), img.forDisplay(m_help->devicePixelRatioF()));
         m_helpText->setHtml(h.html);
     } else {
         m_helpText->setSearchPaths({QFileInfo(file).absolutePath()});

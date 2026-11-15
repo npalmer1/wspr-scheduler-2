@@ -15,7 +15,13 @@ namespace Rtf {
 struct Image
 {
     QString name;   // used in <img src="...">: give it to QTextDocument::addResource
-    QImage image;
+    QImage image;   // as stored in the file
+    QSize shown;    // the size the document shows it at (the <img> width / height)
+
+    // The picture for addResource: shrunk smoothly to the size it is shown at, at the screen's pixel
+    // ratio. Given the full-size picture, QTextBrowser shrinks it by dropping pixels, which made fine
+    // lines in a large picture look broken and grainy.
+    QImage forDisplay(qreal devicePixelRatio = 1.0) const;
 };
 
 struct Html
