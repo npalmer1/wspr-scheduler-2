@@ -354,6 +354,19 @@ void MainWindow::positionClockBar()
     }
 }
 
+// "Today: dd/MM/yyyy" under the calendars - kept up to date by the clock, so it moves on at midnight when
+// WSPR Scheduler is left running (it was only set at start-up)
+void MainWindow::updateCalendarToday()
+{
+    if (!m_calToday)
+        return;
+    const QString t = "Today: " + QDate::currentDate().toString("dd/MM/yyyy");
+    if (m_calToday->text() != t) {
+        m_calToday->setText(t);
+        m_calToday->adjustSize();
+    }
+}
+
 // C# showed two months side by side (CalendarDimensions 2 x 1) with "Today: dd/MM/yyyy" underneath.
 // QCalendarWidget shows one, so a second one (the following month) sits beside monthCalendar1 under a
 // shared header. monthCalendar1 stays the one the rest of the program reads and listens to.
@@ -416,7 +429,8 @@ void MainWindow::setupCalendars()
 
     auto *today = new QPushButton(m_calBox);
     today->setObjectName("calToday");
-    today->setText("Today: " + QDate::currentDate().toString("dd/MM/yyyy"));
+    m_calToday = today;
+    updateCalendarToday();
     today->setFont(cal1->font());
     today->setStyleSheet("text-align: left; padding-left: 4px;");
     today->setCursor(Qt::PointingHandCursor);

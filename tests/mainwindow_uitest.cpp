@@ -184,6 +184,16 @@ int main(int argc, char **argv)
     auto combo = [&](const char *n) { return w.findChild<QComboBox *>(n); };
     auto lab = [&](const char *n) { return w.findChild<QLabel *>(n)->text(); };
     auto *tabs = w.findChild<QTabWidget *>("tabControl1");
+
+    // "Today:" under the calendars follows the clock - after midnight too (it was set only at start-up)
+    {
+        QPushButton *today = btn("calToday");
+        const QString want = "Today: " + QDate::currentDate().toString("dd/MM/yyyy");
+        CHECK(today && today->text() == want);
+        today->setText("Today: 15/11/2026");   // as if WSPR Scheduler had been running since yesterday
+        pump(1300);                             // the clock updates once a second
+        CHECK(today->text() == want);
+    }
     for (int i = 0; i < tabs->count(); ++i)
         if (tabs->tabText(i).startsWith("Freq"))
             tabs->setCurrentIndex(i);

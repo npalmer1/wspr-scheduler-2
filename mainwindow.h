@@ -226,6 +226,8 @@ private:
     void fitWindowToSlotsTab();
     QFrame *m_calBox = nullptr;
     QCalendarWidget *m_cal2 = nullptr;   // the right-hand month
+    QPushButton *m_calToday = nullptr;    // "Today: dd/MM/yyyy" (updated by updateClockLabels)
+    void updateCalendarToday();
     QLabel *m_calMonth1 = nullptr, *m_calMonth2 = nullptr;
     QDate m_calLeft;                       // first day of the left-hand month
 

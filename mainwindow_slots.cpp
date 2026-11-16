@@ -242,6 +242,7 @@ void MainWindow::updateClockLabels()
     ui->Timelabel->setText(now.toString("HH:mm:ss"));
     ui->LTlabel->setText(QDateTime::currentDateTime().toString("HH:mm"));
     ui->Datelabel->setText(QLocale(QLocale::English).toString(now, "ddd-dd-MMM-yyyy"));   // C#: Mon-02-Nov-2026
+    updateCalendarToday();
     positionClockBar();
 }
 
