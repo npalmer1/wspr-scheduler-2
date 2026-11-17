@@ -325,11 +325,14 @@ fi
 # ---- 5. data folder, help, clock ------------------------------------------------------------------
 say "Finishing"
 mkdir -p "$DATADIR"
-HELP="$PREFIX/share/wspr-scheduler-2/wspr_sked2_help.rtf"
-if [ -f "$HELP" ] && [ ! -f "$DATADIR/wspr_sked2_help.rtf" ]; then
-    cp "$HELP" "$DATADIR/"
-    ok "help file (F1) copied to $DATADIR"
-fi
+# the help (wspr_sked2_help_vN.rtf): never over a copy there; a new _vN sits beside the old one
+for HELP in "$PREFIX"/share/wspr-scheduler-2/wspr_sked2_help*.rtf; do
+    [ -f "$HELP" ] || continue
+    if [ ! -f "$DATADIR/$(basename "$HELP")" ]; then
+        cp "$HELP" "$DATADIR/"
+        ok "help file (F1) $(basename "$HELP") copied to $DATADIR"
+    fi
+done
 ok "$DATADIR ready (wsprd's working files)"
 if command -v timedatectl >/dev/null; then
     sudo timedatectl set-ntp true 2>/dev/null && ok "network time on (WSPR needs the clock within a second)" \

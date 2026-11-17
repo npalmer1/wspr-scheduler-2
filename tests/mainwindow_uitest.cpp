@@ -39,6 +39,7 @@
 #include <QTemporaryDir>
 #include <QTextBrowser>
 #include <QShortcut>
+#include <QDateTime>
 #include <QDir>
 #include "rxspot.h"
 #include <QSslSocket>
@@ -209,7 +210,7 @@ int main(int argc, char **argv)
         answered.clear();
         w.showHelp();
         pump(100);
-        CHECK(answered.filter("wspr_sked2_help.rtf not found in").size() == 1);
+        CHECK(answered.filter("wspr_sked2_help_vN.rtf not found in").size() == 1);
         QFile hf(helpPath);
         hf.open(QIODevice::WriteOnly);
         hf.write("{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}{\\b WSPR Scheduler help}\\par Press F1 for this.\\par}");
@@ -227,7 +228,7 @@ int main(int argc, char **argv)
         QWidget *helpWin = nullptr;
         for (QWidget *tl : QApplication::topLevelWidgets())
             if (tl->objectName() == "helpWindow") helpWin = tl;
-        CHECK(helpWin && helpWin->isVisible() && helpWin->windowTitle() == "WSPR Scheduler 2 - Help");
+        CHECK(helpWin && helpWin->isVisible() && helpWin->windowTitle() == "WSPR Scheduler 2 - Help - " + QDir::toNativeSeparators(helpPath));
         if (helpWin) {
             auto *tb = helpWin->findChild<QTextBrowser *>("helpText");
             CHECK(tb && tb->toPlainText().contains("WSPR Scheduler help") && tb->toPlainText().contains("Press F1 for this."));
@@ -252,8 +253,32 @@ int main(int argc, char **argv)
             CHECK(helpWin->findChild<QTextBrowser *>("helpText")->toPlainText().contains("Data folder copy"));
             helpWin->close();
         }
-        QFile::remove(helpPath);
-        QFile::remove(dataHelp);
+        // a higher _vN wins wherever it is, even when older than an unversioned copy
+        const QString v2 = QCoreApplication::applicationDirPath() + "/wspr_sked2_help_v2.rtf";
+        const QString v10 = QDir(Rx::defaultDataDir()).filePath("wspr_sked2_help_v10.rtf");
+        {
+            QFile f2(v2);
+            f2.open(QIODevice::WriteOnly);
+            f2.write("{\\rtf1 Version two\\par}");
+            f2.close();
+            f2.open(QIODevice::ReadWrite);
+            f2.setFileTime(QDateTime::currentDateTime().addDays(-30), QFileDevice::FileModificationTime);
+            f2.close();
+        }
+        w.showHelp();
+        pump(50);
+        CHECK(helpWin && helpWin->findChild<QTextBrowser *>("helpText")->toPlainText().contains("Version two"));
+        CHECK(helpWin && helpWin->windowTitle().endsWith(QDir::toNativeSeparators(v2)));
+        {
+            QFile f10(v10);   // 10 > 2: compared as numbers, not text
+            f10.open(QIODevice::WriteOnly);
+            f10.write("{\\rtf1 Version ten\\par}");
+        }
+        CHECK(MainWindow::newestHelpFile({Rx::defaultDataDir(), QCoreApplication::applicationDirPath()}) == v10);
+        if (helpWin)
+            helpWin->close();
+        for (const QString &f : {helpPath, dataHelp, v2, v10})
+            QFile::remove(f);
     }
 
     // ---- antennas from the database ----

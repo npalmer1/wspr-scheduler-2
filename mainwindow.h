@@ -368,11 +368,12 @@ private:                   // "Frequency correction (ppm)" (new)
 
     // ---- help window (mainwindow_help.cpp) ----
     void setupHelp();
-    QString helpFile() const;              // C:\WSPR_Sked\wspr_sked2_help.rtf, else next to the program
+    QString helpFile() const;              // the newest wspr_sked2_help_vN.rtf (C:\WSPR_Sked, next to the program)
     QWidget *m_help = nullptr;             // C#: HelpForm
     class QTextBrowser *m_helpText = nullptr;
 public:
     void showHelp();                       // C#: ShowHelp (F1)
+    static QString newestHelpFile(const QStringList &dirs);   // (public for the tests)
     void setMySqlStart(const MySqlStarter::Result &r) { m_mysqlStart = r; }   // what main() did about MySQL
 private:
 

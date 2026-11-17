@@ -2,10 +2,11 @@
 // of its own. Qt has no RTF reader, so the file is converted to HTML (rtfhtml.*) each time it is opened,
 // which also picks up any edits to the file.
 //
-// The help file is wspr_sked2_help.rtf in C:\WSPR_Sked (the installer puts it there, and never over
-// an edited copy), so it can be edited in WordPad without administrator rights. Its own name keeps it
-// apart from the C# version's main_help.rtf in the same folder. A copy next to the program is used if
-// there is none in C:\WSPR_Sked; wspr_sked2_help.html is used too, if there is no .rtf.
+// The help file is wspr_sked2_help_vN.rtf (or wspr_sked2_help.rtf, = version 0) in C:\WSPR_Sked (the
+// installer puts it there, and never over an edited copy), so it can be edited in WordPad without
+// administrator rights. Its own name keeps it apart from the C# version's main_help.rtf in the same
+// folder. The highest version wins, in C:\WSPR_Sked or next to the program - so a new release's
+// _v(N+1) is shown even where an older one was installed. wspr_sked2_help.html is used if there's no .rtf.
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -14,10 +15,12 @@
 #include "rxspot.h"
 
 #include <QApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QLabel>
+#include <QRegularExpression>
 #include <QScreen>
 #include <QShortcut>
 #include <QTextBrowser>
@@ -35,24 +38,50 @@ void MainWindow::setupHelp()
 
 QString MainWindow::helpFile() const
 {
-    // ~/WSPR_Sked (C:\\WSPR_Sked), next to the program, and on Linux where "cmake --install" puts it
+    // ~/WSPR_Sked (C:\WSPR_Sked), next to the program, and on Linux where "cmake --install" puts it
     // (/usr/local/share/wspr-scheduler-2)
     const QString app = QCoreApplication::applicationDirPath();
     const QStringList dirs{Rx::defaultDataDir(), app, QDir(app).filePath("../share/wspr-scheduler-2")};
-    for (const QString &name : {QStringLiteral("wspr_sked2_help.rtf"), QStringLiteral("wspr_sked2_help.html")})
+    return newestHelpFile(dirs);
+}
+
+// The highest wspr_sked2_help_vN.rtf in dirs (no "_vN" = 0); of the same version, the one saved last
+// (an edited copy next to the program beats an older one in C:\WSPR_Sked). No .rtf: the .html.
+QString MainWindow::newestHelpFile(const QStringList &dirs)
+{
+    static const QRegularExpression re("^wspr_sked2_help(?:_v(\\d+))?\\.rtf$",
+                                       QRegularExpression::CaseInsensitiveOption);
+    QString best;
+    int bestVersion = -1;
+    QDateTime bestTime;
+    for (const QString &d : dirs)
+        for (const QString &name : QDir(d).entryList({"wspr_sked2_help*.rtf"}, QDir::Files)) {
+            const auto m = re.match(name);
+            if (!m.hasMatch())
+                continue;
+            const int v = m.captured(1).toInt();
+            const QString path = QDir(d).filePath(name);
+            const QDateTime t = QFileInfo(path).lastModified();
+            if (v > bestVersion || (v == bestVersion && t > bestTime)) {
+                bestVersion = v;
+                bestTime = t;
+                best = path;
+            }
+        }
+    if (best.isEmpty())
         for (const QString &d : dirs) {
-            const QString p = QDir(d).filePath(name);
+            const QString p = QDir(d).filePath("wspr_sked2_help.html");
             if (QFileInfo::exists(p))
                 return p;
         }
-    return QString();
+    return best;
 }
 
 void MainWindow::showHelp()
 {
     const QString file = helpFile();
     if (file.isEmpty()) {
-        Msg::timed(this, "wspr_sked2_help.rtf not found in " + QDir::toNativeSeparators(Rx::defaultDataDir()),
+        Msg::timed(this, "wspr_sked2_help_vN.rtf not found in " + QDir::toNativeSeparators(Rx::defaultDataDir()),
                    "Help file", 3000);   // C#: "mainhelp.rtf not found"
         return;
     }
@@ -66,7 +95,6 @@ void MainWindow::showHelp()
     if (!m_help) {
         m_help = new QWidget(nullptr, Qt::Window);   // a window of its own (C#: HelpForm), not kept on top
         m_help->setObjectName("helpWindow");
-        m_help->setWindowTitle("WSPR Scheduler 2 - Help");
         m_help->setWindowIcon(windowIcon());
         auto *lay = new QVBoxLayout(m_help);
         lay->setContentsMargins(0, 0, 0, 0);
@@ -87,6 +115,7 @@ void MainWindow::showHelp()
             m_help->move(at);
         }
     }
+    m_help->setWindowTitle("WSPR Scheduler 2 - Help - " + QDir::toNativeSeparators(file));   // which file
     QTextDocument *doc = m_helpText->document();
     doc->clear();
     if (file.endsWith(".rtf", Qt::CaseInsensitive)) {

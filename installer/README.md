@@ -15,22 +15,27 @@ and rebuild before making a new release.
    installer\thirdparty\libcrypto-3-x64.dll
    installer\thirdparty\libssl-3-x64.dll
    ```
-3. Optional: copy `wspr_sked2_help.rtf` (the help shown by F1) into `installer\thirdparty`. It is
-   installed in `C:\WSPR_Sked`, but never over a copy already there, so edits on a PC are kept.
-   To give an existing PC a new help file, copy it to `C:\WSPR_Sked` by hand.
+3. Optional: copy the help shown by F1, `wspr_sked2_help_vN.rtf` (e.g. `wspr_sked2_help_v1.rtf`), into
+   `installer\thirdparty`. It is installed in `C:\WSPR_Sked`, but never over a file of the same name, so
+   edits on a PC are kept. For a new help file, give it the next number (`_v2`): the installer adds it
+   beside the old one and WSPR Scheduler 2 shows the highest number it finds (in `C:\WSPR_Sked` or next
+   to the program). Keep only the newest one in `thirdparty`.
 4. Optional: copy `wspr_db.sql` (the blank databases) into `installer\thirdparty` too. The installer then
    puts it in `C:\WSPR_Sked`, as the C# installer does. It never replaces a `wspr_db.sql` that is
    already there.
-5. Make `installer\thirdparty\WSPR_Sked` and copy into it the programs the C# installer puts in
-   `C:\WSPR_Sked`, with the DLLs they need:
-   - `wsprd.exe`, the WSPR decoder, from WSJT-X's `bin` folder;
-   - `rigctld.exe` (rig control) and `rigctl.exe` (gives the list of rigs on the Rigctl rigs tab), from
-     Hamlib's `bin` folder.
+5. Make `installer\thirdparty\WSPR_Sked` and copy into it the files the C# installer puts in
+   `C:\WSPR_Sked` (the list is in the C# repo's `WSPRSked\WSPRSked.vdproj`):
+
+   | File | Used by | Copy from |
+   | --- | --- | --- |
+   | `wsprd.exe` | decoding | the C# repo folder |
+   | `libfftw3f-3.dll`, `libquadmath-0.dll`, `libgcc_s_seh-1.dll`, `libwinpthread-1.dll` | wsprd | `C:\WSJT\wsjtx\bin` |
+   | `rigctld.exe`, `rigctl.exe` | rig control, the list of rigs | the C# repo folder |
+   | `libhamlib-4.dll`, `libusb-1.0.dll` | rigctld and rigctl | the C# repo folder |
 
    Everything in that folder is installed in `C:\WSPR_Sked`, which is where WSPR Scheduler 2 looks for
    wsprd and Hamlib when no folder has been chosen, so users need neither WSJT-X nor Hamlib. Both are
-   GPL software. If wsprd and Hamlib each bring a DLL of the same name, keep the copy the C# version
-   already runs with.
+   GPL software. (`wspr_enc.exe` isn't needed: WSPR Scheduler 2 encodes messages itself.)
 
 `thirdparty`, `stage` and `output` are in `.gitignore`, so none of these go to GitHub.
 

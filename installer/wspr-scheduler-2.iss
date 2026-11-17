@@ -65,9 +65,11 @@ Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreve
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "requirements.txt"; DestDir: "{app}"; Flags: ignoreversion
 #ifdef HaveHelp
-; the help shown by F1: in C:\WSPR_Sked so it can be edited without administrator rights, and never
-; over a copy already there (its own name keeps it apart from the C# version's main_help.rtf)
-Source: "thirdparty\wspr_sked2_help.rtf"; DestDir: "C:\WSPR_Sked"; Flags: onlyifdoesntexist uninsneveruninstall
+; the help shown by F1 (wspr_sked2_help_vN.rtf): in C:\WSPR_Sked so it can be edited without
+; administrator rights, and never over a copy already there - a new version has a new _vN name, so it
+; is added beside the old one, and WSPR Scheduler 2 shows the highest. (Its own name keeps it apart from
+; the C# version's main_help.rtf.)
+Source: "thirdparty\wspr_sked2_help*.rtf"; DestDir: "C:\WSPR_Sked"; Flags: onlyifdoesntexist uninsneveruninstall
 #endif
 #ifdef HaveDbSql
 ; The databases themselves are never touched: this only copies the blank-database file to where the

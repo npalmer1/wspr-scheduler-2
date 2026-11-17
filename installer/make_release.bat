@@ -6,7 +6,7 @@ rem  1. Qt Creator: choose the Release build (bottom left, the computer icon), t
 rem  2. Once only: put the MySQL files in installer\thirdparty (see installer\README.md):
 rem       thirdparty\sqldrivers\qsqlmysql.dll
 rem       thirdparty\libmysql.dll  thirdparty\libcrypto-3-x64.dll  thirdparty\libssl-3-x64.dll
-rem     and, if you want them in the installer, thirdparty\wspr_sked2_help.rtf (the F1 help) and
+rem     and, if you want them in the installer, thirdparty\wspr_sked2_help_vN.rtf (the F1 help) and
 rem     thirdparty\wspr_db.sql (both copied to C:\WSPR_Sked, never over ones already there)
 rem     and thirdparty\WSPR_Sked\ : wsprd.exe, rigctld.exe, rigctl.exe and their DLLs (installed in C:\WSPR_Sked)
 rem  3. Inno Setup 7 (or 6) installed (https://jrsoftware.org/isdl.php).
@@ -97,9 +97,9 @@ if not defined ISCC (
 )
 echo Inno Setup: %ISCC%
 set "EXTRA="
-if exist "%THIRD%\wspr_sked2_help.rtf" (
+if exist "%THIRD%\wspr_sked2_help*.rtf" (
     set "EXTRA=!EXTRA! /DHaveHelp"
-    echo Including wspr_sked2_help.rtf
+    for %%H in ("%THIRD%\wspr_sked2_help*.rtf") do echo Including %%~nxH
 )
 if exist "%THIRD%\wspr_db.sql" (
     set "EXTRA=!EXTRA! /DHaveDbSql"
@@ -112,8 +112,9 @@ if defined TOOLS (
     set "EXTRA=!EXTRA! /DHaveTools"
     echo Including thirdparty\WSPR_Sked ^(installed in C:\WSPR_Sked^)
 )
-for %%F in (wsprd.exe rigctld.exe rigctl.exe) do (
-    if not exist "%THIRD%\WSPR_Sked\%%F" echo Warning: no thirdparty\WSPR_Sked\%%F - users will need to install it themselves
+rem the same set the C# installer puts in C:\WSPR_Sked (WSPRSked.vdproj)
+for %%F in (wsprd.exe libfftw3f-3.dll libquadmath-0.dll libgcc_s_seh-1.dll libwinpthread-1.dll rigctld.exe rigctl.exe libhamlib-4.dll libusb-1.0.dll) do (
+    if not exist "%THIRD%\WSPR_Sked\%%F" echo Warning: no thirdparty\WSPR_Sked\%%F
 )
 if exist "%HERE%output" rd /s /q "%HERE%output"
 "%ISCC%" /Q %EXTRA% "%HERE%wspr-scheduler-2.iss"
