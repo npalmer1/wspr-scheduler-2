@@ -21,6 +21,16 @@ and rebuild before making a new release.
 4. Optional: copy `wspr_db.sql` (the blank databases) into `installer\thirdparty` too. The installer then
    puts it in `C:\WSPR_Sked`, as the C# installer does. It never replaces a `wspr_db.sql` that is
    already there.
+5. Make `installer\thirdparty\WSPR_Sked` and copy into it the programs the C# installer puts in
+   `C:\WSPR_Sked`, with the DLLs they need:
+   - `wsprd.exe`, the WSPR decoder, from WSJT-X's `bin` folder;
+   - `rigctld.exe` (rig control) and `rigctl.exe` (gives the list of rigs on the Rigctl rigs tab), from
+     Hamlib's `bin` folder.
+
+   Everything in that folder is installed in `C:\WSPR_Sked`, which is where WSPR Scheduler 2 looks for
+   wsprd and Hamlib when no folder has been chosen, so users need neither WSJT-X nor Hamlib. Both are
+   GPL software. If wsprd and Hamlib each bring a DLL of the same name, keep the copy the C# version
+   already runs with.
 
 `thirdparty`, `stage` and `output` are in `.gitignore`, so none of these go to GitHub.
 
@@ -41,10 +51,9 @@ and rebuild before making a new release.
 
 - Installs into `C:\Program Files\WSPR Scheduler 2`, with a Start menu folder (program, requirements,
   GitHub page, uninstall) and, if ticked, a desktop icon. 64-bit Windows 10 or 11 only.
-- Shows the GPLv3 licence, then a page listing what else is needed (MySQL and the WSPR databases,
-  WSJT-X, Hamlib). The same text is installed as `requirements.txt`.
+- Shows the GPLv3 licence, then a page listing what else is needed (MySQL and the WSPR databases). The same text is installed as `requirements.txt`.
 - Makes `C:\WSPR_Sked` if it isn't there (recordings, wsprd files), writable by all users, and leaves it
-  when uninstalling.
+  when uninstalling. Puts wsprd, rigctld and rigctl there, with their DLLs, if they were in `thirdparty\WSPR_Sked`.
 - Optional task (unticked): a Windows Firewall rule letting WsprSked.exe accept connections on private
   networks, for the Remote tab. Uninstalling removes the rule.
 - **Never touches the databases**, the settings or `DBcredential`. Installing again (an upgrade, or a

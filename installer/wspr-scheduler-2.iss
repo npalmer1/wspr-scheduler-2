@@ -74,6 +74,12 @@ Source: "thirdparty\wspr_sked2_help.rtf"; DestDir: "C:\WSPR_Sked"; Flags: onlyif
 ; C# installer puts it, and never over one already there. Importing it is a separate, deliberate step.
 Source: "thirdparty\wspr_db.sql"; DestDir: "C:\WSPR_Sked"; Flags: onlyifdoesntexist uninsneveruninstall
 #endif
+#ifdef HaveTools
+; wsprd (the WSPR decoder, from WSJT-X) and Hamlib's rigctld and rigctl (rig control and the list of
+; rigs), with the DLLs they need, in C:\WSPR_Sked as the C# installer does - the folder WSPR Scheduler 2
+; uses for both when none has been chosen. Kept on uninstall, since the C# version uses the same copies.
+Source: "thirdparty\WSPR_Sked\*"; DestDir: "C:\WSPR_Sked"; Flags: ignoreversion uninsneveruninstall
+#endif
 
 [INI]
 Filename: "{app}\WSPR Scheduler 2 on GitHub.url"; Section: "InternetShortcut"; Key: "URL"; String: "{#AppUrl}"

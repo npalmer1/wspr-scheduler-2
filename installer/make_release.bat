@@ -8,6 +8,7 @@ rem       thirdparty\sqldrivers\qsqlmysql.dll
 rem       thirdparty\libmysql.dll  thirdparty\libcrypto-3-x64.dll  thirdparty\libssl-3-x64.dll
 rem     and, if you want them in the installer, thirdparty\wspr_sked2_help.rtf (the F1 help) and
 rem     thirdparty\wspr_db.sql (both copied to C:\WSPR_Sked, never over ones already there)
+rem     and thirdparty\WSPR_Sked\ : wsprd.exe, rigctld.exe, rigctl.exe and their DLLs (installed in C:\WSPR_Sked)
 rem  3. Inno Setup 7 (or 6) installed (https://jrsoftware.org/isdl.php).
 rem Then double-click this file.
 setlocal EnableExtensions EnableDelayedExpansion
@@ -103,6 +104,16 @@ if exist "%THIRD%\wspr_sked2_help.rtf" (
 if exist "%THIRD%\wspr_db.sql" (
     set "EXTRA=!EXTRA! /DHaveDbSql"
     echo Including wspr_db.sql
+)
+set "TOOLS="
+if exist "%THIRD%\WSPR_Sked\wsprd.exe" set "TOOLS=1"
+if exist "%THIRD%\WSPR_Sked\rigctld.exe" set "TOOLS=1"
+if defined TOOLS (
+    set "EXTRA=!EXTRA! /DHaveTools"
+    echo Including thirdparty\WSPR_Sked ^(installed in C:\WSPR_Sked^)
+)
+for %%F in (wsprd.exe rigctld.exe rigctl.exe) do (
+    if not exist "%THIRD%\WSPR_Sked\%%F" echo Warning: no thirdparty\WSPR_Sked\%%F - users will need to install it themselves
 )
 if exist "%HERE%output" rd /s /q "%HERE%output"
 "%ISCC%" /Q %EXTRA% "%HERE%wspr-scheduler-2.iss"

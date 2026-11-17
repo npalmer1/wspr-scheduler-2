@@ -18,14 +18,14 @@ On a new PC:
    Use one or the other, not both (they both use port 3306).
    The full steps are in "The WSPR Scheduler Database Configuration" on the SourceForge page.
 
-2. WSJT-X (free) - for wsprd.exe, which decodes the WSPR signals received
-   https://wsjt.sourceforge.io/wsjtx.html
-   Default folder: C:\WSJT\wsjtx\bin (another can be chosen on the RX & Sound config tab).
+2. wsprd.exe, which decodes the WSPR signals received, is included: this installer puts it in
+   C:\WSPR_Sked, where WSPR Scheduler 2 looks for it. It comes from WSJT-X (GPLv3,
+   https://wsjt.sourceforge.io/wsjtx.html); to use WSJT-X's own copy instead, choose its folder
+   (e.g. C:\WSJT\wsjtx\bin) on the RX & Sound config tab.
 
-3. Hamlib (free) - for rigctld.exe, if the rig is controlled through rigctld
-   https://github.com/Hamlib/Hamlib/releases
-   Choose its folder on the Rigctl rigs tab. Not needed for a rig on the Non Rigctl TX tab, or a rig
-   tuned by hand with VOX.
+3. Hamlib's rigctld.exe (rig control) and rigctl.exe (the list of rigs) are included too, also in
+   C:\WSPR_Sked. Hamlib is GPL software: https://github.com/Hamlib/Hamlib/releases
+   To use a newer Hamlib, install it and choose its bin folder on the Rigctl rigs tab.
 
 4. A sound card connected to the rig (audio in and out).
 
