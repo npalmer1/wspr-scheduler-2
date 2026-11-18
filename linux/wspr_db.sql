@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 06, 2026 at 04:02 PM
+-- Generation Time: Nov 18, 2026 at 07:44 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -713,7 +713,7 @@ INSERT INTO `sunrise_sunset` (`locator`, `date`, `sunrise`, `sunset`) VALUES
 -- Indexes for table `sunrise_sunset`
 --
 ALTER TABLE `sunrise_sunset`
-  ADD PRIMARY KEY (`date`);
+  ADD PRIMARY KEY (`locator`,`date`);
 --
 -- Database: `wspr_rpt`
 --
@@ -869,7 +869,8 @@ CREATE TABLE `slots` (
   `RptType` tinyint(4) NOT NULL,
   `GreyOffset` int(4) NOT NULL,
   `Switch2` int(11) NOT NULL DEFAULT 0,
-  `SwitchPort2` int(11) NOT NULL DEFAULT 0
+  `SwitchPort2` int(11) NOT NULL DEFAULT 0,
+  `Rig` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -922,7 +923,8 @@ CREATE TABLE `slots` (
   `rpttype` tinyint(4) NOT NULL,
   `greyoffset` int(4) NOT NULL,
   `switch2` int(11) NOT NULL DEFAULT 0,
-  `switchport2` int(11) NOT NULL DEFAULT 0
+  `switchport2` int(11) NOT NULL DEFAULT 0,
+  `Rig` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -960,30 +962,30 @@ CREATE TABLE `weather` (
   `flux` float DEFAULT 0,
   `SSN` int(11) DEFAULT 0,
   `Xray` varchar(10) DEFAULT '',
-  `pf00` varchar(25) DEFAULT '',
-  `pf03` varchar(25) DEFAULT '',
-  `pf06` varchar(25) DEFAULT '',
-  `pf09` varchar(25) DEFAULT '',
-  `pf12` varchar(25) DEFAULT '',
-  `pf15` varchar(25) DEFAULT '',
-  `pf18` varchar(25) DEFAULT '',
-  `pf21` varchar(25) DEFAULT '',
-  `fl00` varchar(25) DEFAULT '',
-  `fl03` varchar(25) DEFAULT '',
-  `fl06` varchar(25) DEFAULT '',
-  `fl09` varchar(25) DEFAULT '',
-  `fl12` varchar(25) DEFAULT '',
-  `fl15` varchar(25) DEFAULT '',
-  `fl18` varchar(25) DEFAULT '',
-  `fl21` varchar(25) DEFAULT '',
-  `s00` varchar(25) DEFAULT '',
-  `s03` varchar(25) DEFAULT '',
-  `s06` varchar(25) DEFAULT '',
-  `s09` varchar(25) DEFAULT '',
-  `s12` varchar(25) DEFAULT '',
-  `s15` varchar(25) DEFAULT '',
-  `s18` varchar(25) DEFAULT '',
-  `s21` varchar(25) DEFAULT ''
+  `pf00` varchar(300) DEFAULT '',
+  `pf03` varchar(300) DEFAULT '',
+  `pf06` varchar(300) DEFAULT '',
+  `pf09` varchar(300) DEFAULT '',
+  `pf12` varchar(300) DEFAULT '',
+  `pf15` varchar(300) DEFAULT '',
+  `pf18` varchar(300) DEFAULT '',
+  `pf21` varchar(300) DEFAULT '',
+  `fl00` varchar(300) DEFAULT '',
+  `fl03` varchar(300) DEFAULT '',
+  `fl06` varchar(300) DEFAULT '',
+  `fl09` varchar(300) DEFAULT '',
+  `fl12` varchar(300) DEFAULT '',
+  `fl15` varchar(300) DEFAULT '',
+  `fl18` varchar(300) DEFAULT '',
+  `fl21` varchar(300) DEFAULT '',
+  `s00` varchar(300) DEFAULT '',
+  `s03` varchar(300) DEFAULT '',
+  `s06` varchar(300) DEFAULT '',
+  `s09` varchar(300) DEFAULT '',
+  `s12` varchar(300) DEFAULT '',
+  `s15` varchar(300) DEFAULT '',
+  `s18` varchar(300) DEFAULT '',
+  `s21` varchar(300) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
