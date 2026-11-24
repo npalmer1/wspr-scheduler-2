@@ -29,8 +29,6 @@ it receives and decodes WSPR spots (with WSJT-X's `wsprd`) and can upload them t
 - WSJT-X, for `wsprd`.
 - Hamlib, for `rigctld`, if a rig is controlled through it.
 
-Windows build and set-up steps are in [DEPLOY_WINDOWS.md](DEPLOY_WINDOWS.md). Notes on the port and on
-where it differs from the C# version are in [PORTING_NOTES.md](PORTING_NOTES.md).
 
 ## Building
 
