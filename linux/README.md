@@ -8,12 +8,12 @@ Tested on Ubuntu 24.04. Debian 12 and Raspberry Pi OS (64-bit, Bookworm) should 
 1. Download the install script and run it, as your normal user (it asks for your password itself):
 
    ```
-   wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/install.sh
-   bash install.sh
+   wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/sked-install.sh
+   bash sked-install.sh
    ```
 
    It installs git if needed, downloads WSPR Scheduler 2 into `~/wspr-scheduler-2`, and installs it.
-   (If you already have a copy cloned from GitHub, `bash linux/install.sh` in it does the same.)
+   (If you already have a copy cloned from GitHub, `bash linux/sked-install.sh` in it does the same.)
 
 2. **Log out and back in** (or restart) - the script gives your user access to the serial port and the
    sound card, and that only applies to a new login.
@@ -71,7 +71,7 @@ sed -i 's/utf8mb4_0900_ai_ci/utf8mb4_general_ci/g' wspr_backup.sql
 Run the script again:
 
 ```
-bash ~/wspr-scheduler-2/linux/install.sh
+bash ~/wspr-scheduler-2/linux/sked-install.sh
 ```
 
 It pulls the latest version from GitHub, rebuilds and reinstalls the program; the databases and settings

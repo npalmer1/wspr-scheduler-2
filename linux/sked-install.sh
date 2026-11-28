@@ -2,9 +2,9 @@
 # WSPR Scheduler 2 - install or update on Ubuntu / Debian / Raspberry Pi OS.
 #
 # Just this script is enough - download it and run it:
-#   wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/install.sh
-#   bash install.sh
-# (or, in a folder already cloned from GitHub:  bash linux/install.sh)
+#   wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/sked-install.sh
+#   bash sked-install.sh
+# (or, in a folder already cloned from GitHub:  bash linux/sked-install.sh)
 #
 # It asks for your password (sudo) where it needs it, and:
 #   0. installs git if it isn't there, and gets the source: clones it into ~/wspr-scheduler-2, or if
@@ -181,7 +181,7 @@ if [ -z "${WSPR_SKED_BOOTSTRAPPED:-}" ] && [ "$UPDATE" = 1 ]; then
     [ "$WSPRD" = none ] && NEXT+=(--no-wsjtx)
     [ "$WSPRD" = full ] && NEXT+=(--full-wsjtx)
     [ "$WITH_MYSQL" = 0 ] && NEXT+=(--no-mysql)
-    exec bash "$DEST/linux/install.sh" "${NEXT[@]}"
+    exec bash "$DEST/linux/sked-install.sh" "${NEXT[@]}"
 fi
 
 SRC="$DEST"

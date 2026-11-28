@@ -130,7 +130,7 @@ if(WIN32)
 endif()
 
 
-# Linux: "cmake --install" (linux/install.sh does it): the program, a menu entry and icon, and in
+# Linux: "cmake --install" (linux/sked-install.sh does it): the program, a menu entry and icon, and in
 # share/wspr-scheduler-2 the help file and the blank databases, when they are in linux/ (or in
 # installer/thirdparty, as for the Windows installer)
 if(UNIX AND NOT APPLE)

@@ -45,8 +45,8 @@ WSPR Scheduler 2 runs on Linux too (Ubuntu 24.04 tested; Debian and Raspberry Pi
 To install, download the install script and run it:
 
 ```
-wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/install.sh
-bash install.sh
+wget https://raw.githubusercontent.com/npalmer1/wspr-scheduler-2/main/linux/sked-install.sh
+bash sked-install.sh
 ```
 
 It gets the source (clones it into ~/wspr-scheduler-2, or pulls the latest), installs everything needed (Qt 6, Hamlib, WSJT-X's wsprd, MariaDB), builds and installs the program
